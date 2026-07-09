@@ -1,0 +1,15 @@
+﻿# SDA data expansion dependencies.
+# Install the torch/torchvision build that matches your CUDA version.
+
+torch
+torchvision
+numpy
+opencv-python
+Pillow
+matplotlib
+scikit-learn
+tqdm
+transformers
+diffusers
+accelerate
+safetensors

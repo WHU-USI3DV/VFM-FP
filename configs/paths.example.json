@@ -1,0 +1,23 @@
+{
+    "segmentation":  {
+                         "project_dir":  "VCFS",
+                         "train_dataset_dir":  "VCFS/facadewhu_extend",
+                         "train_split":  "txt/train_1601.txt",
+                         "val_split":  "txt/val.txt",
+                         "class_config":  "configs/facade_classes.json",
+                         "weights_dir":  "VCFS/logs",
+                         "pretrained_dir":  "VCFS/model_data"
+                     },
+    "sda":  {
+                "facadewhu_origin":  "SDA/DINO_extract/FacadeWHU_origin",
+                "norway_dataset":  "SDA/DINO_extract/norway",
+                "diffusion_output":  "SDA/diffusion/Norway/output",
+                "dino_model_cache":  "SDA/DINO_extract/dinov2_base",
+                "seed_record":  "SDA/diffusion/Seed_record.txt"
+            },
+    "notes":  [
+                  "This file documents current local defaults only.",
+                  "Public SDA DINO ranking entrypoints and Mul_Ab_norway.py accept CLI overrides while preserving these defaults.",
+                  "Some legacy and experimental scripts still keep in-file defaults for reproduction compatibility."
+              ]
+}

@@ -1,0 +1,85 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environments and local IDE state
+.venv/
+venv/
+env/
+.conda/
+.vscode/
+.idea/
+
+# Training outputs and checkpoints
+logs/
+**/logs/
+model_data/*.pth
+model_data/*.pt
+model_data/*.tar
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.bin
+*.safetensors
+
+# Datasets and generated imagery
+VOCdevkit/
+**/VOCdevkit/
+FacadeWHU_origin/
+facadewhu/
+facadewhu_extend/
+facadewhu_vfm-fp_*/
+ECP/
+ECP_*/
+ecp_*/
+4_nyl_zip/
+4_nyl_zip.zip
+wuhan_test/
+SDA/DINO_extract/FacadeWHU_origin/
+SDA/DINO_extract/norway/
+SDA/DINO_extract/norway_facade/
+SDA/DINO_extract/norway_facadewhu/
+SDA/DINO_extract/low_quality_pic/
+SDA/DINO_extract/check_quality/
+SDA/DINO_extract/deeplab_features/
+SDA/DINO_extract/deeplab_encoder_vis/
+SDA/DINO_extract/DINO_feature/
+SDA/DINO_extract/Paper_save/
+SDA/DINO_extract/pca_visualizations/
+SDA/diffusion/diversity/
+SDA/diffusion/need_facadewhu_ori_and_norway/
+
+# Archives and large generated assets
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.tif
+*.tiff
+
+# Keep documentation placeholders if they are added later.
+!**/README.md
+!docs/**/*.png
+
+# Local run artifacts
+Seed_record.txt
+indexes_with_fewer_nums*.txt
+miou_out*/
+debug/
+paper_out*/
+img_out/
+
+# Local release copies
+release/

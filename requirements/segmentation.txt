@@ -1,0 +1,18 @@
+﻿# Core segmentation training/inference dependencies.
+# Install the torch/torchvision build that matches your CUDA version.
+
+torch
+torchvision
+numpy
+opencv-python
+Pillow
+matplotlib
+scipy
+tqdm
+tensorboard
+h5py
+labelme
+thop
+torchsummary
+onnx
+onnxsim
