@@ -1,4 +1,4 @@
-﻿# VFM-FP
+# VFM-FP
 
 <a href="https://github.com/" target="_blank">Leveraging Visual Foundation Model Priors for Facade Parsing from Street View Images</a>
 
@@ -10,16 +10,16 @@ This repository contains the source code for VFM-FP, a street-view facade parsin
 
 ## Introduction
 
-VFM-FP is designed for facade parsing from street-view images. The cleaned public code is organized around two parts:
+VFM-FP is designed for facade parsing from street-view images. The public code is organized around two parts:
 
 - **SDA**: data-level expansion and sample selection using diffusion/ControlNet generation and DINO feature-distance ranking.
 - **VCFS**: VFM-CNN fusion segmentor code for training, inference, and mIoU evaluation.
 
-The cleanup preserves the accepted-paper algorithmic behavior. It reorganizes files, removes local data and generated artifacts from release packages, documents entrypoints, and adds release-audit tools.
+This release preserves the accepted-paper algorithmic behavior while keeping local datasets, checkpoints, generated images, and experiment outputs outside the repository.
 
 ## News
 
-- 2026-07-04: Public-release cleanup completed. The final source-only candidate is available at `release/VFM-FP-final`.
+- 2026-07-09: Public source code released on GitHub.
 - 2026-07-04: The segmentation module was renamed to `VCFS`, short for VFM-CNN fusion segmentor.
 - 2026-07-04: Final PDF metadata was used to fill the citation draft title and author list.
 
@@ -37,7 +37,7 @@ The cleanup preserves the accepted-paper algorithmic behavior. It reorganizes fi
 |   |-- predict.py               # Image/folder/video/FPS/ONNX inference entrypoint
 |   `-- get_miou.py              # mIoU evaluation entrypoint
 |-- configs/                     # Class metadata and path examples
-|-- docs/                        # Data, release, citation, and cleanup notes
+|-- docs/                        # Data, citation, and licensing notes
 |-- requirements/                # Lightweight dependency lists
 `-- tools/                       # Release generation and audit tools
 ```
@@ -118,7 +118,7 @@ Before training, check the following settings in `VCFS/train.py`:
 - `model_path`: pretrained or resumed checkpoint path.
 - `input_shape`, `backbone`, `downsample_factor`, batch size, optimizer, and epoch settings.
 
-The cleanup keeps these defaults unchanged for reproducibility.
+These defaults are kept unchanged for reproducibility.
 
 ### 3. Train
 
@@ -251,39 +251,19 @@ python voc_annotation.py
 
 Edit the paths inside the script before running if your generated output folder differs from the accepted-paper defaults.
 
-## Release Packages
+## Repository Checks
 
-This workspace can contain local datasets and experiment outputs. To create source-only release folders:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/prepare_release.ps1 -Force
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/generate_file_inventory.ps1 -Root release/VFM-FP-open-source
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/prepare_lean_release.ps1 -Output release/VFM-FP-final -Force
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/generate_file_inventory.ps1 -Root release/VFM-FP-final
-```
-
-The current final package is:
-
-```text
-release/VFM-FP-final
-```
-
-The final package is source-only. It keeps the six reviewed files and excludes Optional compatibility or historical helpers.
-
-## Release Checks
-
-Run these checks before uploading the final package:
+Run these checks before publishing changes:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/smoke_check.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/audit_release.ps1 -Root release/VFM-FP-final -Limit 100
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/content_audit.ps1 -Root release/VFM-FP-final -Limit 100
-python tools/syntax_check_release.py release/VFM-FP-final
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/audit_release.ps1 -Root . -Limit 100
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/content_audit.ps1 -Root . -Limit 100
+python tools/syntax_check_release.py .
 ```
 
-The latest checked final package passed:
+The latest checked public code passed:
 
-- smoke check
 - release asset audit
 - content audit
 - Python syntax check
@@ -297,9 +277,9 @@ Do not add a root `CITATION.cff` until official year, journal issue details, pag
 
 ## License
 
-The project owner chose not to add a root project `LICENSE` in this cleanup pass. The upstream DeepLabv3+ baseline notice is preserved at `VCFS/LICENSE`.
+This repository does not currently include a root project `LICENSE`. The upstream DeepLabv3+ baseline notice is preserved at `VCFS/LICENSE`.
 
-See `docs/licensing.md` and `docs/owner_decisions.md` for details.
+See `docs/licensing.md` for details.
 
 ## Related Projects
 
@@ -309,5 +289,3 @@ This repository builds on or interfaces with the following open-source ecosystem
 - DINOv2 from Facebook Research.
 - Hugging Face diffusers and transformers.
 - ControlNet models used through diffusers.
-
-

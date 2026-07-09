@@ -1,6 +1,6 @@
 # Data and Weights
 
-The repository currently contains local experiment data and trained artifacts. They should not be committed to the public code repository.
+This repository intentionally excludes local experiment data and trained artifacts. Keep datasets, checkpoints, generated images, logs, and caches outside git.
 
 ## Expected Local Paths
 
@@ -45,4 +45,4 @@ For the public repository, publish one of these:
 
 Do not publish datasets or pretrained weights unless their licenses and redistribution permissions are clear.
 
-For a source-only release candidate, run tools/prepare_release.ps1 and then audit release/VFM-FP-open-source with tools/audit_release.ps1.
+Before publishing repository updates, run the audit scripts from the repository root to check for accidental datasets, weights, generated media, caches, or local paths.
