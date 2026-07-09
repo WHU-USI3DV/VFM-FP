@@ -21,6 +21,12 @@ from pathlib import Path
 from ImageNet_color import Color
 
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+def repo_path(*parts):
+    return str(REPO_ROOT.joinpath(*parts))
+
+
 pipe = None
 depth_estimator = None
 image_processor = None
@@ -377,15 +383,15 @@ def generate_image(image, gt_image, prompt, args, generator):
 def build_parser(defaults=None):
     defaults = defaults or {}
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--image-dir", default=defaults.get("image_dir", "FacadeWHU_origin/JPEGImages"))
-    parser.add_argument("--mask-dir", default=defaults.get("mask_dir", "FacadeWHU_origin/SegmentationClass"))
-    parser.add_argument("--split-file", default=defaults.get("split_file", "FacadeWHU_origin/txt/trainval.txt"))
+    parser.add_argument("--image-dir", default=defaults.get("image_dir", repo_path("FacadeWHU_origin", "JPEGImages")))
+    parser.add_argument("--mask-dir", default=defaults.get("mask_dir", repo_path("FacadeWHU_origin", "SegmentationClass")))
+    parser.add_argument("--split-file", default=defaults.get("split_file", repo_path("FacadeWHU_origin", "txt", "trainval.txt")))
     parser.add_argument("--candidate-file", default=defaults.get("candidate_file", ""))
-    parser.add_argument("--output-dir", default=defaults.get("output_dir", "SDA_output/syn_image"))
-    parser.add_argument("--seed-record", default=defaults.get("seed_record", "Seed_record.txt"))
-    parser.add_argument("--generation-record", default=defaults.get("generation_record", "SDA_output/txt/synthetic_pairs.csv"))
-    parser.add_argument("--syn-list", default=defaults.get("syn_list", "SDA_output/txt/syn_trainval.txt"))
-    parser.add_argument("--source-list", default=defaults.get("source_list", "SDA_output/txt/source_trainval_for_syn.txt"))
+    parser.add_argument("--output-dir", default=defaults.get("output_dir", repo_path("SDA_output", "syn_image")))
+    parser.add_argument("--seed-record", default=defaults.get("seed_record", repo_path("SDA_output", "txt", "Seed_record.txt")))
+    parser.add_argument("--generation-record", default=defaults.get("generation_record", repo_path("SDA_output", "txt", "synthetic_pairs.csv")))
+    parser.add_argument("--syn-list", default=defaults.get("syn_list", repo_path("SDA_output", "txt", "syn_trainval.txt")))
+    parser.add_argument("--source-list", default=defaults.get("source_list", repo_path("SDA_output", "txt", "source_trainval_for_syn.txt")))
     parser.add_argument("--allocation-mode", default=defaults.get("allocation_mode", "ltp"), choices=("ltp", "legacy_score", "fixed"))
     parser.add_argument("--target-total", default=defaults.get("target_total", 0), type=int)
     parser.add_argument("--fixed-count", default=defaults.get("fixed_count", 1), type=int)

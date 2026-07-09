@@ -192,24 +192,19 @@ SDA contains the data expansion and generated-sample ranking workflow used befor
 The main SDA generation entrypoint is:
 
 ```bash
-cd SDA/diffusion
-python semantic_diffusion_augmentation.py --help
+python SDA/diffusion/semantic_diffusion_augmentation.py --help
 ```
 
-Example command using the paper's high-diversity DDE setting:
+Example command using the paper's high-diversity DDE setting, run from the repository root:
 
 ```bash
-python semantic_diffusion_augmentation.py \
-  --image-dir FacadeWHU_origin/JPEGImages \
-  --mask-dir FacadeWHU_origin/SegmentationClass \
-  --split-file FacadeWHU_origin/txt/trainval.txt \
-  --output-dir SDA_output/syn_image \
+python SDA/diffusion/semantic_diffusion_augmentation.py \
   --allocation-mode ltp \
   --prompt-profile paper_high \
   --target-total 1601
 ```
 
-Add `--dry-run` to inspect the LTP allocation plan without loading diffusion models. `paper_high` combines the location, time, and weather prompts from the paper: France/USA/China/Italy, noon/afternoon, and sunny/cloudy. `paper_limited` keeps the five-prompt ablation setting, while `Mul_Ab_norway.py` remains as a compatibility wrapper for the original Norway defaults.
+By default, the script reads `FacadeWHU_origin/JPEGImages`, `FacadeWHU_origin/SegmentationClass`, and `FacadeWHU_origin/txt/trainval.txt`, then writes generated images and records under `SDA_output/`. Add `--dry-run` to inspect the LTP allocation plan without loading diffusion models. `paper_high` combines the location, time, and weather prompts from the paper: France/USA/China/Italy, noon/afternoon, and sunny/cloudy. `paper_limited` keeps the five-prompt ablation setting, while `Mul_Ab_norway.py` remains as a compatibility wrapper for the original Norway defaults.
 
 This script initializes Stable Diffusion, ControlNet, depth estimation, and semantic segmentation models at runtime. Keep Hugging Face caches and downloaded model weights outside git.
 
@@ -218,20 +213,13 @@ This script initializes Stable Diffusion, ControlNet, depth estimation, and sema
 The SCF entrypoint is:
 
 ```bash
-cd SDA/DINO_extract
-python semantic_consistency_filter.py --help
+python SDA/DINO_extract/semantic_consistency_filter.py --help
 ```
 
-Example command:
+Example command, run from the repository root:
 
 ```bash
-python semantic_consistency_filter.py \
-  --ori-jpeg-path FacadeWHU_origin/JPEGImages \
-  --syn-jpeg-path SDA_output/syn_image \
-  --ori-txt SDA_output/txt/source_trainval_for_syn.txt \
-  --syn-txt SDA_output/txt/syn_trainval.txt \
-  --save-path SDA_output/scf \
-  --output-mode filtered_ids
+python SDA/DINO_extract/semantic_consistency_filter.py --output-mode filtered_ids
 ```
 
 The generation step writes `SDA_output/txt/syn_trainval.txt` and `SDA_output/txt/source_trainval_for_syn.txt` as aligned synthetic/source id lists. SCF uses DINOv2 feature distance and keeps generated samples whose score is not above `mean + std`. The lower-level `dino_rank_generated.py` script also supports sorted-score outputs for manual inspection.
@@ -239,27 +227,22 @@ The generation step writes `SDA_output/txt/syn_trainval.txt` and `SDA_output/txt
 Compatibility presets are also kept:
 
 ```bash
-python Extract_Cul.py
-python Extract_Cul_facadewhu.py
-python Extract_Cul_ecp.py
+python SDA/DINO_extract/Extract_Cul.py
+python SDA/DINO_extract/Extract_Cul_facadewhu.py
+python SDA/DINO_extract/Extract_Cul_ecp.py
 ```
 
 ### 3. Prepare SCF-retained samples for VCFS
 
-Copy retained synthetic images and their inherited source masks into a VOC-style VCFS dataset:
+Copy retained synthetic images and their inherited source masks into a VOC-style VCFS dataset. Add `--copy-source-train` when the VCFS dataset does not already contain the original training images and labels:
 
 ```bash
-cd SDA
-python prepare_vcfs_augmented_dataset.py \
-  --synthetic-image-dir SDA_output/syn_image \
-  --source-mask-dir FacadeWHU_origin/SegmentationClass \
-  --scf-keep SDA_output/scf/scf_keep.txt \
-  --pair-record SDA_output/txt/synthetic_pairs.csv \
-  --target-dataset ../VCFS/facadewhu_extend \
+python SDA/prepare_vcfs_augmented_dataset.py \
+  --copy-source-train \
   --write-train-split
 ```
 
-This writes `txt/sda_retained.txt` and, with `--write-train-split`, creates `txt/train_1601.txt` from `txt/train.txt` plus retained `syn_*` samples. `SDA/diffusion/voc_annotation.py` is still kept as a simple split-file helper when needed.
+By default, this reads `SDA_output/scf/scf_keep.txt` and `SDA_output/txt/synthetic_pairs.csv`, writes retained synthetic samples into `VCFS/facadewhu_extend`, and creates `txt/train_1601.txt` from `txt/train.txt` plus retained `syn_*` samples. The script validates that every split id has paired image and mask files before writing the augmented training split. `SDA/diffusion/voc_annotation.py` is still kept as a simple split-file helper when needed.
 
 ## Repository Checks
 

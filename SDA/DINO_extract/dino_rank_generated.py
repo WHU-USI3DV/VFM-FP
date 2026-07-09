@@ -10,12 +10,18 @@ import os
 from pathlib import Path
 
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+def repo_path(*parts):
+    return str(REPO_ROOT.joinpath(*parts))
+
+
 DEFAULTS = {
-    "ori_jpeg_path": "FacadeWHU_origin/JPEGImages",
-    "syn_jpeg_path": "SDA_output/syn_image",
-    "ori_txt": "SDA_output/txt/source_trainval_for_syn.txt",
-    "syn_txt": "SDA_output/txt/syn_trainval.txt",
-    "save_path": "SDA_output/scf",
+    "ori_jpeg_path": repo_path("FacadeWHU_origin", "JPEGImages"),
+    "syn_jpeg_path": repo_path("SDA_output", "syn_image"),
+    "ori_txt": repo_path("SDA_output", "txt", "source_trainval_for_syn.txt"),
+    "syn_txt": repo_path("SDA_output", "txt", "syn_trainval.txt"),
+    "save_path": repo_path("SDA_output", "scf"),
     "patch_h": 40,
     "patch_w": 40,
     "feat_dim": 384,

@@ -15,8 +15,9 @@
     "synthetic_pairs": "SDA_output/txt/synthetic_pairs.csv",
     "synthetic_split": "SDA_output/txt/syn_trainval.txt",
     "source_split_for_synthetic": "SDA_output/txt/source_trainval_for_syn.txt",
+    "vcfs_augmented_dataset": "VCFS/facadewhu_extend",
     "scf_output": "SDA_output/scf",
-    "seed_record": "Seed_record.txt"
+    "seed_record": "SDA_output/txt/Seed_record.txt"
   },
   "notes": [
     "This file documents public example paths only; datasets, generated images, checkpoints, and caches are not included.",
