@@ -1,23 +1,25 @@
 {
-    "segmentation":  {
-                         "project_dir":  "VCFS",
-                         "train_dataset_dir":  "VCFS/facadewhu_extend",
-                         "train_split":  "txt/train_1601.txt",
-                         "val_split":  "txt/val.txt",
-                         "class_config":  "configs/facade_classes.json",
-                         "weights_dir":  "VCFS/logs",
-                         "pretrained_dir":  "VCFS/model_data"
-                     },
-    "sda":  {
-                "facadewhu_origin":  "SDA/DINO_extract/FacadeWHU_origin",
-                "norway_dataset":  "SDA/DINO_extract/norway",
-                "diffusion_output":  "SDA/diffusion/Norway/output",
-                "dino_model_cache":  "SDA/DINO_extract/dinov2_base",
-                "seed_record":  "SDA/diffusion/Seed_record.txt"
-            },
-    "notes":  [
-                  "This file documents current local defaults only.",
-                  "Public SDA DINO ranking entrypoints and Mul_Ab_norway.py accept CLI overrides while preserving these defaults.",
-                  "Some legacy and experimental scripts still keep in-file defaults for reproduction compatibility."
-              ]
+  "segmentation": {
+    "project_dir": "VCFS",
+    "train_dataset_dir": "VCFS/facadewhu_extend",
+    "train_split": "txt/train_1601.txt",
+    "val_split": "txt/val.txt",
+    "class_config": "configs/facade_classes.json",
+    "weights_dir": "VCFS/logs",
+    "pretrained_dir": "VCFS/model_data"
+  },
+  "sda": {
+    "facadewhu_origin_images": "FacadeWHU_origin/JPEGImages",
+    "facadewhu_origin_masks": "FacadeWHU_origin/SegmentationClass",
+    "diffusion_output": "SDA_output/syn_image",
+    "synthetic_pairs": "SDA_output/txt/synthetic_pairs.csv",
+    "synthetic_split": "SDA_output/txt/syn_trainval.txt",
+    "source_split_for_synthetic": "SDA_output/txt/source_trainval_for_syn.txt",
+    "scf_output": "SDA_output/scf",
+    "seed_record": "Seed_record.txt"
+  },
+  "notes": [
+    "This file documents public example paths only; datasets, generated images, checkpoints, and caches are not included.",
+    "Mul_Ab_norway.py and Extract_Cul*.py remain compatibility entrypoints for reproducing older experiment defaults."
+  ]
 }

@@ -187,50 +187,54 @@ Use it when you need parameters, FLOPs, GPU memory, or FPS statistics.
 
 SDA contains the data expansion and generated-sample ranking workflow used before segmentation training.
 
-### 1. Diffusion / ControlNet generation
+### 1. Diffusion / ControlNet generation with DDE + LTP
 
-The main configurable generation entrypoint is:
+The main SDA generation entrypoint is:
 
 ```bash
 cd SDA/diffusion
-python Mul_Ab_norway.py --help
+python semantic_diffusion_augmentation.py --help
 ```
 
-Example command:
+Example command using the paper's high-diversity DDE setting:
 
 ```bash
-python Mul_Ab_norway.py \
-  --folder-path FacadeWHU_origin/JPEGImages \
-  --gt-path FacadeWHU_origin/SegmentationClass \
-  --save-path Norway/output \
-  --filename FacadeWHU_origin/txt/trainval.txt \
-  --small-txt Norway/small/output_sort_1.txt \
-  --seed-record Seed_record.txt \
-  --max-count 2
+python semantic_diffusion_augmentation.py \
+  --image-dir FacadeWHU_origin/JPEGImages \
+  --mask-dir FacadeWHU_origin/SegmentationClass \
+  --split-file FacadeWHU_origin/txt/trainval.txt \
+  --output-dir SDA_output/syn_image \
+  --allocation-mode ltp \
+  --prompt-profile paper_high \
+  --target-total 1601
 ```
+
+Add `--dry-run` to inspect the LTP allocation plan without loading diffusion models. `paper_high` combines the location, time, and weather prompts from the paper: France/USA/China/Italy, noon/afternoon, and sunny/cloudy. `paper_limited` keeps the five-prompt ablation setting, while `Mul_Ab_norway.py` remains as a compatibility wrapper for the original Norway defaults.
 
 This script initializes Stable Diffusion, ControlNet, depth estimation, and semantic segmentation models at runtime. Keep Hugging Face caches and downloaded model weights outside git.
 
-### 2. DINO feature-distance ranking
+### 2. Semantic consistency filtering with DINOv2
 
-The configurable DINOv2 ranking entrypoint is:
+The SCF entrypoint is:
 
 ```bash
 cd SDA/DINO_extract
-python dino_rank_generated.py --help
+python semantic_consistency_filter.py --help
 ```
 
 Example command:
 
 ```bash
-python dino_rank_generated.py \
+python semantic_consistency_filter.py \
   --ori-jpeg-path FacadeWHU_origin/JPEGImages \
-  --syn-jpeg-path norway/syn_image \
-  --ori-txt norway/txt/trainval_w.txt \
-  --syn-txt norway/txt/trainval.txt \
-  --save-path norway/low_result \
-  --output-mode sorted_indices
+  --syn-jpeg-path SDA_output/syn_image \
+  --ori-txt SDA_output/txt/source_trainval_for_syn.txt \
+  --syn-txt SDA_output/txt/syn_trainval.txt \
+  --save-path SDA_output/scf \
+  --output-mode filtered_ids
 ```
+
+The generation step writes `SDA_output/txt/syn_trainval.txt` and `SDA_output/txt/source_trainval_for_syn.txt` as aligned synthetic/source id lists. SCF uses DINOv2 feature distance and keeps generated samples whose score is not above `mean + std`. The lower-level `dino_rank_generated.py` script also supports sorted-score outputs for manual inspection.
 
 Compatibility presets are also kept:
 
@@ -240,16 +244,22 @@ python Extract_Cul_facadewhu.py
 python Extract_Cul_ecp.py
 ```
 
-### 3. Build split files for SDA outputs
+### 3. Prepare SCF-retained samples for VCFS
 
-The SDA split helper is kept in the final package:
+Copy retained synthetic images and their inherited source masks into a VOC-style VCFS dataset:
 
 ```bash
-cd SDA/diffusion
-python voc_annotation.py
+cd SDA
+python prepare_vcfs_augmented_dataset.py \
+  --synthetic-image-dir SDA_output/syn_image \
+  --source-mask-dir FacadeWHU_origin/SegmentationClass \
+  --scf-keep SDA_output/scf/scf_keep.txt \
+  --pair-record SDA_output/txt/synthetic_pairs.csv \
+  --target-dataset ../VCFS/facadewhu_extend \
+  --write-train-split
 ```
 
-Edit the paths inside the script before running if your generated output folder differs from the accepted-paper defaults.
+This writes `txt/sda_retained.txt` and, with `--write-train-split`, creates `txt/train_1601.txt` from `txt/train.txt` plus retained `syn_*` samples. `SDA/diffusion/voc_annotation.py` is still kept as a simple split-file helper when needed.
 
 ## Repository Checks
 

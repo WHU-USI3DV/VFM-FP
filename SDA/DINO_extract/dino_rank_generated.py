@@ -1,4 +1,4 @@
-﻿"""Configurable DINOv2 feature-distance ranking for generated facade images.
+"""Configurable DINOv2 feature-distance ranking for generated facade images.
 
 The default presets used by Extract_Cul*.py preserve the accepted-paper
 experiment paths and output formats. Imports for torch/torchvision/PIL happen
@@ -12,10 +12,10 @@ from pathlib import Path
 
 DEFAULTS = {
     "ori_jpeg_path": "FacadeWHU_origin/JPEGImages",
-    "syn_jpeg_path": "norway/syn_image",
-    "ori_txt": "norway/txt/trainval_w.txt",
-    "syn_txt": "norway/txt/trainval.txt",
-    "save_path": "norway/low_result",
+    "syn_jpeg_path": "SDA_output/syn_image",
+    "ori_txt": "SDA_output/txt/source_trainval_for_syn.txt",
+    "syn_txt": "SDA_output/txt/syn_trainval.txt",
+    "save_path": "SDA_output/scf",
     "patch_h": 40,
     "patch_w": 40,
     "feat_dim": 384,
@@ -25,6 +25,10 @@ DEFAULTS = {
     "with_scores_name": "low_with.txt",
     "ids_name": "low_wout.txt",
     "scores_name": "re_dis_ynl_st3.txt",
+    "filtered_name": "scf_keep.txt",
+    "discarded_name": "scf_discard.txt",
+    "threshold_scale": 1.0,
+    "sort_image_ids": False,
     "echo_scores": False,
 }
 
@@ -45,18 +49,23 @@ def build_parser(defaults=None):
     parser.add_argument("--feat-dim", default=cfg["feat_dim"], type=int)
     parser.add_argument("--model-repo", default=cfg["model_repo"])
     parser.add_argument("--model-name", default=cfg["model_name"])
-    parser.add_argument("--output-mode", default=cfg["output_mode"], choices=("sorted_indices", "syn_scores"))
+    parser.add_argument("--output-mode", default=cfg["output_mode"], choices=("sorted_indices", "syn_scores", "filtered_ids"))
     parser.add_argument("--with-scores-name", default=cfg["with_scores_name"])
     parser.add_argument("--ids-name", default=cfg["ids_name"])
     parser.add_argument("--scores-name", default=cfg["scores_name"])
+    parser.add_argument("--filtered-name", default=cfg["filtered_name"])
+    parser.add_argument("--discarded-name", default=cfg["discarded_name"])
+    parser.add_argument("--threshold-scale", default=cfg["threshold_scale"], type=float)
+    parser.add_argument("--sort-image-ids", action="store_true", default=cfg["sort_image_ids"])
     parser.add_argument("--echo-scores", action="store_true", default=cfg["echo_scores"])
     return parser
 
 
-def load_image_ids(txt_path):
+def load_image_ids(txt_path, sort_ids=False):
     with open(os.path.join("", txt_path), "r") as file:
-        image_ids = file.read().splitlines()
-    image_ids.sort()
+        image_ids = [line.strip().replace(",", " ").split()[0] for line in file if line.strip()]
+    if sort_ids:
+        image_ids.sort()
     return image_ids
 
 
@@ -137,8 +146,31 @@ def write_syn_scores(batch_loss, syn_image_ids, save_path, scores_name, echo_sco
             file.write(",")
             file.write(f"{loss.item()}\n")
             if echo_scores:
-                print(image_id + "," + str(loss.item))
+                print(image_id + "," + str(loss.item()))
                 print("\n")
+
+
+def write_filtered_ids(batch_loss, syn_image_ids, save_path, filtered_name, discarded_name, threshold_scale, torch):
+    threshold = torch.mean(batch_loss) + threshold_scale * torch.std(batch_loss, unbiased=False)
+    keep = []
+    discard = []
+    for i, image_id in enumerate(syn_image_ids):
+        item = (image_id, batch_loss[i].item())
+        if batch_loss[i] <= threshold:
+            keep.append(item)
+        else:
+            discard.append(item)
+
+    with open(os.path.join(save_path, filtered_name), "w") as file:
+        for image_id, score in keep:
+            file.write(f"{image_id},{score}\n")
+
+    with open(os.path.join(save_path, discarded_name), "w") as file:
+        for image_id, score in discard:
+            file.write(f"{image_id},{score}\n")
+
+    print(f"SCF threshold: {threshold.item()}")
+    print(f"SCF kept {len(keep)} samples and discarded {len(discard)} samples")
 
 
 def run_ranking(args):
@@ -150,8 +182,13 @@ def run_ranking(args):
     transform = build_transform(T, args.patch_h, args.patch_w)
     dinov2_model = torch.hub.load(args.model_repo, args.model_name, source="github").cuda()
 
-    ori_image_ids = load_image_ids(args.ori_txt)
-    syn_image_ids = load_image_ids(args.syn_txt)
+    ori_image_ids = load_image_ids(args.ori_txt, args.sort_image_ids)
+    syn_image_ids = load_image_ids(args.syn_txt, args.sort_image_ids)
+    if len(ori_image_ids) != len(syn_image_ids):
+        raise ValueError(
+            "SCF requires aligned original and synthetic id lists with equal length; "
+            f"got {len(ori_image_ids)} original ids and {len(syn_image_ids)} synthetic ids."
+        )
 
     print("Start Train")
     ori_features = extract_features(
@@ -186,10 +223,20 @@ def run_ranking(args):
     Path(args.save_path).mkdir(parents=True, exist_ok=True)
     if args.output_mode == "sorted_indices":
         write_sorted_indices(batch_loss, args.save_path, args.with_scores_name, args.ids_name, torch)
-    else:
+        print("Sorted losses and indices have been written.")
+    elif args.output_mode == "syn_scores":
         write_syn_scores(batch_loss, syn_image_ids, args.save_path, args.scores_name, args.echo_scores)
-
-    print("Sorted losses and indices have been written to ...")
+        print("Synthetic image scores have been written.")
+    else:
+        write_filtered_ids(
+            batch_loss,
+            syn_image_ids,
+            args.save_path,
+            args.filtered_name,
+            args.discarded_name,
+            args.threshold_scale,
+            torch,
+        )
 
 
 def main(defaults=None):

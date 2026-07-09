@@ -20,9 +20,9 @@ VCFS/<dataset_name>/
 SDA scripts currently expect local data under:
 
 ```text
-SDA/DINO_extract/FacadeWHU_origin/
-SDA/DINO_extract/norway/
-SDA/diffusion/<dataset folders>
+FacadeWHU_origin/
+SDA_output/
+VCFS/<dataset_name>/
 ```
 
 The DINO and diffusion scripts also reference locally cached Hugging Face models and downloaded checkpoints. Keep those outside git or provide download instructions. Current local path conventions are summarized in `configs/paths.example.json`.

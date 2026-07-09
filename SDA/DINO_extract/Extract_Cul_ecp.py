@@ -1,4 +1,4 @@
-﻿"""Compatibility entrypoint for the ECP DINO generated-image ranking run."""
+"""Compatibility entrypoint for the ECP DINO generated-image ranking run."""
 
 from dino_rank_generated import main
 
@@ -10,6 +10,7 @@ if __name__ == "__main__":
         "ori_txt": "ecp/txt3/trainval_o2s3.txt",
         "syn_txt": "ecp/txt3/trainval_syn3.txt",
         "save_path": "ecp/Re_DINO",
+        "sort_image_ids": True,
         "output_mode": "syn_scores",
         "scores_name": "re3.txt",
     })

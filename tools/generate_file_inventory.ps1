@@ -66,7 +66,7 @@ function Get-FilePurpose {
     if ($p -like "VCFS/*_ori.py" -or $p -like "VCFS/utils/*_ori.py" -or $p -like "VCFS/delete.py" -or $p -like "VCFS/summary.py" -or $p -like "VCFS/turn.py" -or $p -like "VCFS/unsort.py" -or $p -like "VCFS/utils/delete.py" -or $p -like "VCFS/utils/downto.py" -or $p -like "VCFS/utils/Rename.py" -or $p -like "VCFS/utils/turn1.py" -or $p -like "VCFS/utils/dataloader_lastest*") { return @("Compatibility", "Wrapper preserving an old script name or import path.", "Optional") }
 
     if ($p -like "SDA/README.md") { return @("Documentation", "Overview of SDA data expansion and DINO ranking scripts.", "Keep") }
-    if ($p -like "SDA/diffusion/Mul_Ab_norway.py") { return @("SDA core", "Configurable ControlNet generation script with accepted-paper defaults.", "Keep") }
+    if ($p -like "SDA/diffusion/Mul_Ab_norway.py") { return @("SDA core", "Compatibility wrapper for original Norway ControlNet generation defaults.", "Keep") }
     if ($p -like "SDA/diffusion/ImageNet_color.py") { return @("SDA core", "Semantic color palette used by diffusion segmentation conditioning.", "Keep") }
     if ($p -like "SDA/diffusion/voc_annotation.py") { return @("SDA utility", "VOC-style split generation helper for SDA outputs.", "Review") }
     if ($p -like "SDA/diffusion/legacy/*") { return @("SDA legacy", "Historical diffusion or maintenance helper preserved for reproducibility.", "Optional") }

@@ -1,4 +1,4 @@
-﻿"""Compatibility entrypoint for the FacadeWHU DINO generated-image ranking run."""
+"""Compatibility entrypoint for the FacadeWHU DINO generated-image ranking run."""
 
 from dino_rank_generated import main
 
@@ -10,6 +10,7 @@ if __name__ == "__main__":
         "ori_txt": "norway/txt/trainval_w.txt",
         "syn_txt": "norway/txt/trainval.txt",
         "save_path": "norway/low_result",
+        "sort_image_ids": True,
         "output_mode": "syn_scores",
         "scores_name": "re_dis_ynl_st3.txt",
         "echo_scores": True,
