@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 from deeplab import DeeplabV3
 from utils.utils_metrics import compute_mIoU, show_results
+from utils.class_config import load_class_config
 
 '''
 进行指标评估需要注意以下几点：
@@ -19,26 +20,27 @@ if __name__ == "__main__":
     #   miou_mode为2代表仅仅计算miou。
     #---------------------------------------------------------------------------#
     miou_mode       = 0
+    class_config = load_class_config(os.environ.get("VCFS_CLASS_CONFIG"))
     #------------------------------#
     #   分类个数+1、如2+1
     #------------------------------#
-    num_classes     = 7#9
+    num_classes     = int(os.environ.get("VCFS_NUM_CLASSES", class_config["num_classes"]))
     #--------------------------------------------#
     #   区分的种类，和json_to_dataset里面的一样
     #--------------------------------------------#
     #name_classes    = ["background","aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
-    name_classes    = ["background","window","door","facade","balcony","roof","shop"]
+    name_classes    = class_config["classes"]
     #name_classes    = ["background","wall","window","door","balcony","roof","shop","sky","chimney"]
     # name_classes    = ["_background_","cat","dog"]
     #-------------------------------------------------------#
     #   指向VOC数据集所在的文件夹
     #   默认指向根目录下的VOC数据集
     #-------------------------------------------------------#
-    VOCdevkit_path  = 'wuhan_test'
+    VOCdevkit_path  = os.environ.get('VCFS_DATASET_PATH', 'wuhan_test')
 
     image_ids       = open(os.path.join(VOCdevkit_path, "txt/val.txt"),'r').read().splitlines() 
     gt_dir          = os.path.join(VOCdevkit_path, "SegmentationClass/")
-    miou_out_path   = "facadewhu_vfm-fp_0512"#miou_out_07_17_facadewhu_latest_VFM-FP_resize
+    miou_out_path   = os.environ.get("VCFS_MIOU_OUT_PATH", "facadewhu_vfm-fp_0512")
     pred_dir        = os.path.join(miou_out_path, 'detection-results')
     gt_crop_dir     = os.path.join(miou_out_path, 'Ground_True_Crop')
 

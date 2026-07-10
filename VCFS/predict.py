@@ -9,11 +9,13 @@ import numpy as np
 from PIL import Image
 
 from deeplab import DeeplabV3
+from utils.class_config import load_class_config
 
 if __name__ == "__main__":
     #-------------------------------------------------------------------------#
     #   如果想要修改对应种类的颜色，到__init__函数里修改self.colors即可
     #-------------------------------------------------------------------------#
+    class_config = load_class_config()
     deeplab = DeeplabV3()
     #----------------------------------------------------------------------------------------------------------#
     #   mode用于指定测试的模式：
@@ -32,7 +34,7 @@ if __name__ == "__main__":
     #-------------------------------------------------------------------------#
     count           = False
     #name_classes    = ["background","aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
-    name_classes    = ["background","window","door","facade","balcony","roof","shop"]
+    name_classes    = class_config["classes"]
     # name_classes    = ["background","cat","dog"]
     #----------------------------------------------------------------------------------------------------------#
     #   video_path          用于指定视频的路径，当video_path=0时表示检测摄像头

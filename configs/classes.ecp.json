@@ -1,0 +1,28 @@
+{
+  "dataset": "ECP",
+  "num_classes": 9,
+  "dominant_class_id": 1,
+  "classes": [
+    "background",
+    "wall",
+    "window",
+    "door",
+    "balcony",
+    "roof",
+    "shop",
+    "sky",
+    "chimney"
+  ],
+  "colors_rgb": [
+    [0, 0, 0],
+    [128, 128, 128],
+    [255, 0, 0],
+    [255, 128, 0],
+    [128, 0, 255],
+    [0, 0, 255],
+    [0, 255, 0],
+    [135, 206, 235],
+    [160, 82, 45]
+  ],
+  "note": "Example native ECP class order from the legacy code comments. Confirm ids against your ECP masks before training."
+}

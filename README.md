@@ -69,7 +69,13 @@ The original upstream environment files under `VCFS/` are preserved only as expe
 
 Large datasets, model weights, generated images, logs, and caches are intentionally excluded from this repository.
 
-All training datasets must be converted to VOC-style folders with single-channel label masks. Each pixel value in `SegmentationClass/*.png` must be a class id, not an RGB color:
+The recommended workflow is:
+
+1. Convert the original dataset to VOC-style folders.
+2. Run SDA on the original training set to generate and filter augmented samples.
+3. Build the augmented VCFS dataset and train VCFS on that augmented split.
+
+All datasets must use single-channel label masks. Each pixel value in `SegmentationClass/*.png` must be a class id, not an RGB color:
 
 ```text
 <dataset_root>/
@@ -83,6 +89,31 @@ All training datasets must be converted to VOC-style folders with single-channel
     |-- trainval.txt
     `-- test.txt
 ```
+
+### Class Configs
+
+Class-dependent settings are stored in JSON files under `configs/`:
+
+- `configs/classes.facadewhu.json`: default FacadeWHU-style 7-class setup.
+- `configs/classes.ecp.json`: ECP native-class example.
+
+`VCFS/train.py`, `VCFS/deeplab.py`, `VCFS/predict.py`, and `VCFS/get_miou.py` read `VCFS_CLASS_CONFIG`. If the variable is not set, the default is `configs/classes.facadewhu.json`.
+
+PowerShell example:
+
+```powershell
+$env:VCFS_CLASS_CONFIG="configs/classes.facadewhu.json"
+$env:VCFS_DATASET_PATH="facadewhu_extend"
+```
+
+Bash example:
+
+```bash
+export VCFS_CLASS_CONFIG=configs/classes.facadewhu.json
+export VCFS_DATASET_PATH=facadewhu_extend
+```
+
+You may also override only the class count with `VCFS_NUM_CLASSES`, but the safer public workflow is to edit or create a matching class JSON file.
 
 ### Default FacadeWHU Setup
 
@@ -98,7 +129,7 @@ The public defaults are configured for the FacadeWHU-style 7-class facade parser
 6 shop
 ```
 
-The same class metadata is recorded in `configs/facade_classes.json`. To reproduce the default SDA + VCFS workflow, place the original training set at:
+Place the original data used by SDA at:
 
 ```text
 FacadeWHU_origin/
@@ -110,23 +141,47 @@ FacadeWHU_origin/
     `-- val.txt
 ```
 
-SDA reads `FacadeWHU_origin/`, writes generated images and records under `SDA_output/`, and `SDA/prepare_vcfs_augmented_dataset.py` creates the augmented VCFS dataset under `VCFS/facadewhu_extend/`.
+The default SDA output is `SDA_output/`. After SCF, run `SDA/prepare_vcfs_augmented_dataset.py` to create the augmented VCFS dataset under `VCFS/facadewhu_extend/`, including `txt/train_1601.txt`.
 
-### Using ECP or Another Dataset
+### ECP or Another Native-Class Dataset
 
-Do not assume ECP and FacadeWHU share the same class ids. The legacy ECP notes in this codebase use a different class definition, for example:
+ECP does not need to be remapped before training. Keep the original ECP class ids and train directly on native ECP labels. The example native ECP config is:
 
 ```text
+configs/classes.ecp.json
 background, wall, window, door, balcony, roof, shop, sky, chimney
 ```
 
-For ECP training, keep the original ECP class ids and train on the native ECP labels. No remapping is required unless you intentionally want to merge ECP into the default FacadeWHU 7-class setup.
+For ECP training, set the ECP class config and dataset path before running VCFS:
 
-When using ECP or any custom dataset with its own native classes, update every class-dependent setting before training: `configs/facade_classes.json`, `VCFS/train.py` `num_classes`, `VCFS/get_miou.py` `num_classes` and `name_classes`, `VCFS/predict.py` `name_classes`, and any checkpoint path whose classifier head depends on the class count. For SDA LTP, also pass matching `--num-classes` and `--dominant-class-id`; the default dominant id `3` assumes the 7-class FacadeWHU order where `facade` is id 3.
+```powershell
+$env:VCFS_CLASS_CONFIG="configs/classes.ecp.json"
+$env:VCFS_DATASET_PATH="ecp_0619_refine"
+cd VCFS
+python train.py
+```
 
-Only remap labels when you deliberately want to use the default 7-class FacadeWHU configuration. In that case, convert masks into ids `0..6` following the FacadeWHU order above before running SDA or VCFS.
+Only remap ECP masks if you deliberately want to merge ECP into the default FacadeWHU 7-class setup. In that case, convert masks into ids `0..6` following the FacadeWHU order before running SDA or VCFS, and use `configs/classes.facadewhu.json`.
 
-For VCFS training, the final dataset should be under `VCFS/<dataset_name>/` and contain paired image/mask files plus split files. If you use the SDA pipeline, the prepared default target is `VCFS/facadewhu_extend/`; otherwise, set `VCFS_DATASET_PATH` or edit `VOCdevkit_path` in `VCFS/train.py` to your dataset folder.
+For a new dataset, copy one of the class config files, update `num_classes`, `classes`, `colors_rgb`, and `dominant_class_id`, then set `VCFS_CLASS_CONFIG` to that file. `dominant_class_id` is used by SDA LTP; for FacadeWHU it is `3` because `facade` is class id 3.
+
+### Where To Change Runtime Settings
+
+Use these environment variables when possible, so you do not have to edit source files for every dataset:
+
+```text
+VCFS_CLASS_CONFIG      class metadata JSON used by training, inference, and mIoU
+VCFS_DATASET_PATH      dataset folder under VCFS/ or an absolute dataset path
+VCFS_MODEL_PATH        checkpoint path for training resume or inference defaults
+VCFS_INPUT_SHAPE       input size, for example 512,512 or 512x512
+VCFS_BATCH_SIZE        unfreeze-stage batch size
+VCFS_EPOCHS            total training epochs
+VCFS_SAVE_DIR          training log/checkpoint output folder
+VCFS_NUM_WORKERS       dataloader worker count
+VCFS_MIOU_OUT_PATH     mIoU prediction/output folder
+```
+
+The algorithmic defaults in `VCFS/train.py` remain the code baseline: `Init_lr=2e-4`, `Unfreeze_batch_size=4`, Adam, cosine decay, and 200 epochs.
 
 Source-only release packages do not include datasets or weights. See `docs/data_and_weights.md` for expected paths and redistribution guidance.
 
@@ -146,12 +201,13 @@ Example command using the paper's high-diversity DDE setting, run from the repos
 
 ```bash
 python SDA/diffusion/semantic_diffusion_augmentation.py \
+  --class-config configs/classes.facadewhu.json \
   --allocation-mode ltp \
   --prompt-profile paper_high \
   --target-total 1601
 ```
 
-By default, the script reads `FacadeWHU_origin/JPEGImages`, `FacadeWHU_origin/SegmentationClass`, and `FacadeWHU_origin/txt/trainval.txt`, then writes generated images and records under `SDA_output/`. Add `--dry-run` to inspect the LTP allocation plan without loading diffusion models. `paper_high` combines the location, time, and weather prompts from the paper: France/USA/China/Italy, noon/afternoon, and sunny/cloudy. `paper_limited` keeps the five-prompt ablation setting, while `Mul_Ab_norway.py` remains as a compatibility wrapper for the original Norway defaults.
+By default, the script reads `FacadeWHU_origin/JPEGImages`, `FacadeWHU_origin/SegmentationClass`, and `FacadeWHU_origin/txt/trainval.txt`, then writes generated images and records under `SDA_output/`. Add `--dry-run` to inspect the LTP allocation plan without loading diffusion models. For ECP or another native-class dataset, pass the matching class config, for example `--class-config configs/classes.ecp.json`. `paper_high` combines the location, time, and weather prompts from the paper: France/USA/China/Italy, noon/afternoon, and sunny/cloudy. `paper_limited` keeps the five-prompt ablation setting, while `Mul_Ab_norway.py` remains as a compatibility wrapper for the original Norway defaults.
 
 This script initializes Stable Diffusion, ControlNet, depth estimation, and semantic segmentation models at runtime. Keep Hugging Face caches and downloaded model weights outside git.
 
@@ -206,16 +262,31 @@ python voc_annotation.py
 
 ### 2. Configure training
 
-Before training, check the following settings in `VCFS/train.py`:
+Prefer configuring dataset-specific settings with environment variables:
 
-- `VOCdevkit_path`: dataset folder.
-- Training split path: currently `txt/train_1601.txt`.
-- Validation split path: currently `txt/val.txt`.
-- `num_classes`: current facade setup uses 7 classes.
-- `model_path`: pretrained or resumed checkpoint path.
-- `input_shape`, `backbone`, `downsample_factor`, batch size, optimizer, and epoch settings.
+```powershell
+$env:VCFS_CLASS_CONFIG="configs/classes.facadewhu.json"
+$env:VCFS_DATASET_PATH="facadewhu_extend"
+$env:VCFS_BATCH_SIZE="4"
+$env:VCFS_EPOCHS="200"
+```
 
-These defaults are kept unchanged for reproducibility.
+For ECP native-class training:
+
+```powershell
+$env:VCFS_CLASS_CONFIG="configs/classes.ecp.json"
+$env:VCFS_DATASET_PATH="ecp_0619_refine"
+```
+
+The main source locations are still easy to find when you want to change defaults permanently:
+
+- `configs/classes.*.json`: class count, class names, colors, and SDA `dominant_class_id`.
+- `VCFS/train.py`: learning rate, optimizer, scheduler, epoch, batch-size, and dataset defaults.
+- `VCFS/deeplab.py`: inference checkpoint defaults such as `model_path`, `backbone`, and `input_shape`.
+- `VCFS/predict.py`: prediction mode, input folder, and output folder.
+- `VCFS/get_miou.py`: mIoU mode and output folder; `VCFS_DATASET_PATH` and `VCFS_MIOU_OUT_PATH` can override paths.
+
+These defaults are kept close to the accepted code for reproducibility.
 
 ### 3. Train
 

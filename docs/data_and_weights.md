@@ -17,7 +17,22 @@ VCFS/<dataset_name>/
     `-- test.txt
 ```
 
-The default release configuration is FacadeWHU-style 7-class parsing:
+SDA scripts use the original dataset and write generated outputs under these default paths:
+
+```text
+FacadeWHU_origin/          # original images, masks, and split files for SDA
+SDA_output/                # generated images, SCF records, and retained ids
+VCFS/facadewhu_extend/     # augmented VOC-style dataset prepared for VCFS
+```
+
+## Dataset Class Configs
+
+Class metadata is configured through JSON files under `configs/`:
+
+- `configs/classes.facadewhu.json`: default FacadeWHU-style 7-class setup.
+- `configs/classes.ecp.json`: example native ECP setup.
+
+The default FacadeWHU class order is:
 
 ```text
 0 background
@@ -29,17 +44,24 @@ The default release configuration is FacadeWHU-style 7-class parsing:
 6 shop
 ```
 
-SDA scripts currently expect local data and outputs under:
+ECP training should use the original ECP class ids directly; remapping is only needed if you intentionally convert ECP into the default FacadeWHU 7-class setup.
 
-```text
-FacadeWHU_origin/          # original images, masks, and split files for SDA
-SDA_output/                # generated images, SCF records, and retained ids
-VCFS/facadewhu_extend/     # augmented VOC-style dataset prepared for VCFS
+For VCFS, set:
+
+```powershell
+$env:VCFS_CLASS_CONFIG="configs/classes.ecp.json"
+$env:VCFS_DATASET_PATH="ecp_0619_refine"
 ```
 
-ECP training should use the original ECP class ids directly; remapping is only needed if you intentionally convert ECP into the default FacadeWHU 7-class setup. For ECP or custom datasets with native classes, update the class-specific settings in `configs/facade_classes.json`, `VCFS/train.py`, `VCFS/get_miou.py`, and `VCFS/predict.py`. If SDA LTP is used with non-default classes, pass the matching `--num-classes` and `--dominant-class-id`.
+For SDA LTP on ECP or a custom dataset, pass the same class config:
 
-The DINO and diffusion scripts also reference locally cached Hugging Face models and downloaded checkpoints. Keep those outside git or provide download instructions. Current local path conventions are summarized in `configs/paths.example.json`.
+```bash
+python SDA/diffusion/semantic_diffusion_augmentation.py --class-config configs/classes.ecp.json
+```
+
+For a custom dataset, copy one of the class JSON files and update `num_classes`, `classes`, `colors_rgb`, and `dominant_class_id`. The `dominant_class_id` controls SDA long-tail preference allocation.
+
+Current local path conventions are summarized in `configs/paths.example.json`.
 
 ## Files to Exclude From Git
 

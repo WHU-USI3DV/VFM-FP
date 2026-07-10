@@ -1,3 +1,4 @@
+import os
 import colorsys
 import copy
 import time
@@ -11,7 +12,16 @@ from torch import nn
 
 from nets.deeplabv3_plus import DeepLab
 from utils.utils import cvtColor, preprocess_input, resize_image, show_config, resize_img
+from utils.class_config import load_class_config
 
+def _env_shape(name, current):
+    value = os.environ.get(name)
+    if value in (None, ""):
+        return current
+    parts = [int(part.strip()) for part in value.replace("x", ",").split(",") if part.strip()]
+    if len(parts) != 2:
+        raise ValueError("{} must be like 512,512 or 512x512".format(name))
+    return parts
 
 #-----------------------------------------------------------------------------------#
 #   使用自己训练好的模型预测需要修改3个参数
@@ -78,10 +88,25 @@ class DeeplabV3(object):
         self.__dict__.update(self._defaults)
         for name, value in kwargs.items():
             setattr(self, name, value)
+
+        class_config = load_class_config(os.environ.get("VCFS_CLASS_CONFIG"))
+        if "num_classes" not in kwargs:
+            self.num_classes = int(os.environ.get("VCFS_NUM_CLASSES", class_config["num_classes"]))
+        if "model_path" not in kwargs:
+            self.model_path = os.environ.get("VCFS_MODEL_PATH", self.model_path)
+        if "backbone" not in kwargs:
+            self.backbone = os.environ.get("VCFS_BACKBONE", self.backbone)
+        if "input_shape" not in kwargs:
+            self.input_shape = _env_shape("VCFS_INPUT_SHAPE", self.input_shape)
+        configured_colors = class_config.get("colors_rgb") or []
+        self.name_classes = class_config["classes"]
+        self.class_config_path = class_config["path"]
         #---------------------------------------------------#
         #   画框设置不同的颜色
         #---------------------------------------------------#
-        if self.num_classes <= 21:
+        if configured_colors and len(configured_colors) >= self.num_classes:
+            self.colors = [tuple(color) for color in configured_colors[:self.num_classes]]
+        elif self.num_classes <= 21:
             # self.colors = [ (0, 0, 0), (128, 0, 0), (0, 128, 0), (128, 128, 0), (0, 0, 128), (128, 0, 128), (0, 128, 128), 
             #                 (128, 128, 128), (64, 0, 0), (192, 0, 0), (64, 128, 0), (192, 128, 0), (64, 0, 128), (192, 0, 128), 
             #                 (64, 128, 128), (192, 128, 128), (0, 64, 0), (128, 64, 0), (0, 192, 0), (128, 192, 0), (0, 64, 128), 
@@ -99,7 +124,9 @@ class DeeplabV3(object):
         #---------------------------------------------------#
         self.generate()
         
-        show_config(**self._defaults)
+        actual_config = copy.deepcopy(self._defaults)
+        actual_config.update({"model_path": self.model_path, "num_classes": self.num_classes, "backbone": self.backbone, "input_shape": self.input_shape, "class_config": self.class_config_path})
+        show_config(**actual_config)
                     
     #---------------------------------------------------#
     #   获得所有的分类

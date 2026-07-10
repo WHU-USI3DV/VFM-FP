@@ -12,6 +12,8 @@ so ``--help`` and argument inspection work in lightweight environments.
 """
 
 import argparse
+import json
+import sys
 import math
 import os
 import random
@@ -22,6 +24,39 @@ from ImageNet_color import Color
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def resolve_class_config_path(path):
+    config_path = Path(path)
+    if not config_path.is_absolute():
+        cwd_candidate = Path.cwd() / config_path
+        repo_candidate = REPO_ROOT / config_path
+        config_path = cwd_candidate if cwd_candidate.exists() else repo_candidate
+    return config_path
+
+
+def _argument_was_passed(argv, name):
+    values = sys.argv[1:] if argv is None else argv
+    return any(item == name or item.startswith(name + "=") for item in values)
+
+
+def apply_class_config(args, argv=None):
+    if not args.class_config:
+        return args
+
+    config_path = resolve_class_config_path(args.class_config)
+    with config_path.open("r", encoding="utf-8") as file:
+        config = json.load(file)
+
+    if not _argument_was_passed(argv, "--num-classes"):
+        args.num_classes = int(config.get("num_classes", args.num_classes))
+    if not _argument_was_passed(argv, "--dominant-class-id"):
+        args.dominant_class_id = int(config.get("dominant_class_id", args.dominant_class_id))
+    if not _argument_was_passed(argv, "--minority-class-ids") and config.get("minority_class_ids"):
+        args.minority_class_ids = ",".join(str(item) for item in config["minority_class_ids"])
+
+    print("Using class config: {}".format(config_path))
+    return args
 
 def repo_path(*parts):
     return str(REPO_ROOT.joinpath(*parts))
@@ -397,6 +432,7 @@ def build_parser(defaults=None):
     parser.add_argument("--fixed-count", default=defaults.get("fixed_count", 1), type=int)
     parser.add_argument("--max-per-image", default=defaults.get("max_per_image", 5), type=int)
     parser.add_argument("--max-source-images", default=defaults.get("max_source_images", 0), type=int)
+    parser.add_argument("--class-config", default=defaults.get("class_config", ""))
     parser.add_argument("--minority-class-ids", default=defaults.get("minority_class_ids", ""))
     parser.add_argument("--dominant-class-id", default=defaults.get("dominant_class_id", 3), type=int)
     parser.add_argument("--num-classes", default=defaults.get("num_classes", 7), type=int)
@@ -427,6 +463,7 @@ def build_parser(defaults=None):
 
 def main(argv=None, defaults=None):
     args = build_parser(defaults).parse_args(argv)
+    args = apply_class_config(args, argv)
     image_ids, scores = resolve_image_ids(args)
     if args.max_source_images > 0:
         image_ids = image_ids[: args.max_source_images]

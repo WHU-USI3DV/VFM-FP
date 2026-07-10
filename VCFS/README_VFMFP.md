@@ -1,4 +1,4 @@
-﻿# VFM-FP Segmentation Code
+# VFM-FP Segmentation Code
 
 This folder contains the DeepLabv3+ training, evaluation, and inference code used by VFM-FP.
 
@@ -17,7 +17,7 @@ The current facade class order is:
 background, window, door, facade, balcony, roof, shop
 ```
 
-The same metadata is also recorded in `../configs/facade_classes.json`.
+The same metadata is recorded in `../configs/classes.facadewhu.json`. ECP/native-class examples are in `../configs/classes.ecp.json`.
 
 ## Dataset Format
 
@@ -34,14 +34,22 @@ Use a VOC-style directory:
     `-- test.txt
 ```
 
-`train.py` currently reads:
+`train.py` currently reads the dataset selected by `VCFS_DATASET_PATH`; if unset, it uses `facadewhu_extend`. It looks for:
 
 ```text
-facadewhu_extend/txt/train_1601.txt
-facadewhu_extend/txt/val.txt
+<dataset>/txt/train_1601.txt
+<dataset>/txt/val.txt
 ```
 
-Keep this behavior for reproducibility. A later refactor can expose these paths as command-line arguments while preserving the default values.
+If `train_1601.txt` is missing but `train.txt` exists, the split loader falls back to `train.txt`. Use `VCFS_CLASS_CONFIG` to select the matching class metadata before training, prediction, or mIoU evaluation.
+
+PowerShell example:
+
+```powershell
+$env:VCFS_CLASS_CONFIG="../configs/classes.ecp.json"
+$env:VCFS_DATASET_PATH="ecp_0619_refine"
+python train.py
+```
 
 ## Release Notes
 

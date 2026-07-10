@@ -35,6 +35,8 @@ $requiredFiles = @(
     ".gitignore",
     ".gitattributes",
     "configs/facade_classes.json",
+    "configs/classes.facadewhu.json",
+    "configs/classes.ecp.json",
     "configs/paths.example.json",
     "requirements/segmentation.txt",
     "requirements/sda.txt",
@@ -56,6 +58,7 @@ $requiredFiles = @(
     "VCFS/nets/deeplabv3_plus.py",
     "VCFS/utils/dataloader_latest.py",
     "VCFS/utils/split_utils.py",
+    "VCFS/utils/class_config.py",
     "VCFS/utils/fea_upscale.py",
     "VCFS/voc_annotation.py"
 )
@@ -65,6 +68,8 @@ foreach ($file in $requiredFiles) {
 }
 
 Test-JsonFile "configs/facade_classes.json"
+Test-JsonFile "configs/classes.facadewhu.json"
+Test-JsonFile "configs/classes.ecp.json"
 Test-JsonFile "configs/paths.example.json"
 
 $forbiddenDirectoryNames = @(

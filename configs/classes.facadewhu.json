@@ -1,0 +1,24 @@
+{
+  "dataset": "FacadeWHU",
+  "num_classes": 7,
+  "dominant_class_id": 3,
+  "classes": [
+    "background",
+    "window",
+    "door",
+    "facade",
+    "balcony",
+    "roof",
+    "shop"
+  ],
+  "colors_rgb": [
+    [0, 0, 0],
+    [255, 0, 0],
+    [255, 128, 0],
+    [255, 255, 0],
+    [128, 0, 255],
+    [0, 0, 255],
+    [0, 255, 0]
+  ],
+  "note": "Default class order for FacadeWHU-style VFM-FP training."
+}

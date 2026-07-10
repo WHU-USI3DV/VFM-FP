@@ -21,6 +21,7 @@ from utils.utils import (download_weights, seed_everything, show_config,
                          worker_init_fn)
 from utils.utils_fit import fit_one_epoch
 from utils.split_utils import load_split_lines
+from utils.class_config import load_class_config
 
 '''
 鐠侇厾绮岄懛顏勭箒閻ㄥ嫯顕㈡稊澶婂瀻閸撳弶膩閸ㄥ绔寸€规岸娓剁憰浣规暈閹板繋浜掓稉瀣殤閻愮櫢绱?
@@ -252,6 +253,8 @@ if __name__ == "__main__":
     #   num_classes = 3
     #   cls_weights = np.array([1, 2, 3], np.float32)
     #------------------------------------------------------------------#
+    class_config = load_class_config(os.environ.get("VCFS_CLASS_CONFIG"))
+    num_classes = int(os.environ.get("VCFS_NUM_CLASSES", class_config["num_classes"]))
     cls_weights     = np.ones([num_classes], np.float32)
     #------------------------------------------------------------------#
     #   num_workers     閻劋绨拋鍓х枂閺勵垰鎯佹担璺ㄦ暏婢舵氨鍤庣粙瀣嚢閸欐牗鏆熼幑顕嗙礉1娴狅綀銆冮崗鎶芥４婢舵氨鍤庣粙?
@@ -290,6 +293,7 @@ if __name__ == "__main__":
     eval_flag = _env_bool("VCFS_EVAL_FLAG", eval_flag)
     VOCdevkit_path = os.environ.get("VCFS_DATASET_PATH", VOCdevkit_path)
     num_workers = _env_int("VCFS_NUM_WORKERS", num_workers)
+    print("Using class config: {}".format(class_config["path"]))
 
     seed_everything(seed)
     #------------------------------------------------------#
@@ -423,7 +427,7 @@ if __name__ == "__main__":
 
     if local_rank == 0:
         show_config(
-            num_classes = num_classes, backbone = backbone, model_path = model_path, input_shape = input_shape, \
+            num_classes = num_classes, class_config = class_config["path"], backbone = backbone, model_path = model_path, input_shape = input_shape, \
             Init_Epoch = Init_Epoch, Freeze_Epoch = Freeze_Epoch, UnFreeze_Epoch = UnFreeze_Epoch, Freeze_batch_size = Freeze_batch_size, Unfreeze_batch_size = Unfreeze_batch_size, Freeze_Train = Freeze_Train, \
             Init_lr = Init_lr, Min_lr = Min_lr, optimizer_type = optimizer_type, momentum = momentum, lr_decay_type = lr_decay_type, \
             save_period = save_period, save_dir = save_dir, num_workers = num_workers, num_train = num_train, num_val = num_val

@@ -23,12 +23,13 @@ Run from the repository root:
 
 ```bash
 python SDA/diffusion/semantic_diffusion_augmentation.py \
+  --class-config configs/classes.facadewhu.json \
   --allocation-mode ltp \
   --prompt-profile paper_high \
   --target-total 1601
 ```
 
-By default, the script reads `FacadeWHU_origin/JPEGImages`, `FacadeWHU_origin/SegmentationClass`, and `FacadeWHU_origin/txt/trainval.txt`, then writes generated images and records under `SDA_output/`. Use `--dry-run` to inspect the LTP allocation plan without loading diffusion models. `paper_high` uses the 16 DDE prompt combinations described in the paper:
+By default, the script reads `FacadeWHU_origin/JPEGImages`, `FacadeWHU_origin/SegmentationClass`, and `FacadeWHU_origin/txt/trainval.txt`, then writes generated images and records under `SDA_output/`. Use `--class-config configs/classes.ecp.json` for ECP/native-class LTP settings. Use `--dry-run` to inspect the LTP allocation plan without loading diffusion models. `paper_high` uses the 16 DDE prompt combinations described in the paper:
 
 ```text
 locations: France, USA, China, Italy
