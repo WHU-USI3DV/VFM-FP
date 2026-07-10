@@ -69,10 +69,10 @@ The original upstream environment files under `VCFS/` are preserved only as expe
 
 Large datasets, model weights, generated images, logs, and caches are intentionally excluded from this repository.
 
-VCFS expects VOC-style facade parsing data:
+All training datasets must be converted to VOC-style folders with single-channel label masks. Each pixel value in `SegmentationClass/*.png` must be a class id, not an RGB color:
 
 ```text
-VCFS/<dataset_name>/
+<dataset_root>/
 |-- JPEGImages/
 |   |-- xxx.jpg
 |-- SegmentationClass/
@@ -84,13 +84,48 @@ VCFS/<dataset_name>/
     `-- test.txt
 ```
 
-The facade class order used by the cleaned metadata is:
+### Default FacadeWHU Setup
+
+The public defaults are configured for the FacadeWHU-style 7-class facade parser:
 
 ```text
-background, window, door, facade, balcony, roof, shop
+0 background
+1 window
+2 door
+3 facade
+4 balcony
+5 roof
+6 shop
 ```
 
-The same class metadata is recorded in `configs/facade_classes.json`.
+The same class metadata is recorded in `configs/facade_classes.json`. To reproduce the default SDA + VCFS workflow, place the original training set at:
+
+```text
+FacadeWHU_origin/
+|-- JPEGImages/
+|-- SegmentationClass/
+`-- txt/
+    |-- train.txt
+    |-- trainval.txt
+    `-- val.txt
+```
+
+SDA reads `FacadeWHU_origin/`, writes generated images and records under `SDA_output/`, and `SDA/prepare_vcfs_augmented_dataset.py` creates the augmented VCFS dataset under `VCFS/facadewhu_extend/`.
+
+### Using ECP or Another Dataset
+
+Do not assume ECP and FacadeWHU share the same class ids. The legacy ECP notes in this codebase use a different class definition, for example:
+
+```text
+background, wall, window, door, balcony, roof, shop, sky, chimney
+```
+
+Before using ECP or any custom dataset, choose one of these two paths:
+
+1. **Remap to the default 7 classes.** Convert labels into the FacadeWHU order above. For example, map an ECP `wall`/facade-like class to `facade`, drop or merge classes such as `sky` and `chimney` if they are not part of the 7-class setup, and write masks with ids `0..6`. This lets you use the default `configs/facade_classes.json`, `num_classes = 7`, and default VCFS scripts.
+2. **Train with the dataset's own classes.** Keep the dataset-specific ids, then update every class-dependent setting before training: `configs/facade_classes.json`, `VCFS/train.py` `num_classes`, `VCFS/get_miou.py` `num_classes` and `name_classes`, `VCFS/predict.py` `name_classes`, and any checkpoint path whose classifier head depends on the class count. For SDA LTP, also pass matching `--num-classes` and `--dominant-class-id`; the default dominant id `3` assumes the 7-class FacadeWHU order where `facade` is id 3.
+
+For VCFS training, the final dataset should be under `VCFS/<dataset_name>/` and contain paired image/mask files plus split files. If you use the SDA pipeline, the prepared default target is `VCFS/facadewhu_extend/`; otherwise, set `VCFS_DATASET_PATH` or edit `VOCdevkit_path` in `VCFS/train.py` to your dataset folder.
 
 Source-only release packages do not include datasets or weights. See `docs/data_and_weights.md` for expected paths and redistribution guidance.
 

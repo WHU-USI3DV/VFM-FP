@@ -4,7 +4,7 @@ This repository intentionally excludes local experiment data and trained artifac
 
 ## Expected Local Paths
 
-Segmentation training code expects VOC-style data:
+Segmentation training code expects VOC-style data with id-mask labels:
 
 ```text
 VCFS/<dataset_name>/
@@ -17,13 +17,27 @@ VCFS/<dataset_name>/
     `-- test.txt
 ```
 
-SDA scripts currently expect local data under:
+The default release configuration is FacadeWHU-style 7-class parsing:
 
 ```text
-FacadeWHU_origin/
-SDA_output/
-VCFS/<dataset_name>/
+0 background
+1 window
+2 door
+3 facade
+4 balcony
+5 roof
+6 shop
 ```
+
+SDA scripts currently expect local data and outputs under:
+
+```text
+FacadeWHU_origin/          # original images, masks, and split files for SDA
+SDA_output/                # generated images, SCF records, and retained ids
+VCFS/facadewhu_extend/     # augmented VOC-style dataset prepared for VCFS
+```
+
+ECP or custom datasets must either be remapped to the default 7-class ids or used with matching class-specific settings in `configs/facade_classes.json`, `VCFS/train.py`, `VCFS/get_miou.py`, and `VCFS/predict.py`. If SDA LTP is used with non-default classes, pass the matching `--num-classes` and `--dominant-class-id`.
 
 The DINO and diffusion scripts also reference locally cached Hugging Face models and downloaded checkpoints. Keep those outside git or provide download instructions. Current local path conventions are summarized in `configs/paths.example.json`.
 
