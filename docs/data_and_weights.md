@@ -37,7 +37,7 @@ SDA_output/                # generated images, SCF records, and retained ids
 VCFS/facadewhu_extend/     # augmented VOC-style dataset prepared for VCFS
 ```
 
-ECP or custom datasets must either be remapped to the default 7-class ids or used with matching class-specific settings in `configs/facade_classes.json`, `VCFS/train.py`, `VCFS/get_miou.py`, and `VCFS/predict.py`. If SDA LTP is used with non-default classes, pass the matching `--num-classes` and `--dominant-class-id`.
+ECP training should use the original ECP class ids directly; remapping is only needed if you intentionally convert ECP into the default FacadeWHU 7-class setup. For ECP or custom datasets with native classes, update the class-specific settings in `configs/facade_classes.json`, `VCFS/train.py`, `VCFS/get_miou.py`, and `VCFS/predict.py`. If SDA LTP is used with non-default classes, pass the matching `--num-classes` and `--dominant-class-id`.
 
 The DINO and diffusion scripts also reference locally cached Hugging Face models and downloaded checkpoints. Keep those outside git or provide download instructions. Current local path conventions are summarized in `configs/paths.example.json`.
 

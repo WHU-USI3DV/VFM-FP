@@ -120,10 +120,11 @@ Do not assume ECP and FacadeWHU share the same class ids. The legacy ECP notes i
 background, wall, window, door, balcony, roof, shop, sky, chimney
 ```
 
-Before using ECP or any custom dataset, choose one of these two paths:
+For ECP training, keep the original ECP class ids and train on the native ECP labels. No remapping is required unless you intentionally want to merge ECP into the default FacadeWHU 7-class setup.
 
-1. **Remap to the default 7 classes.** Convert labels into the FacadeWHU order above. For example, map an ECP `wall`/facade-like class to `facade`, drop or merge classes such as `sky` and `chimney` if they are not part of the 7-class setup, and write masks with ids `0..6`. This lets you use the default `configs/facade_classes.json`, `num_classes = 7`, and default VCFS scripts.
-2. **Train with the dataset's own classes.** Keep the dataset-specific ids, then update every class-dependent setting before training: `configs/facade_classes.json`, `VCFS/train.py` `num_classes`, `VCFS/get_miou.py` `num_classes` and `name_classes`, `VCFS/predict.py` `name_classes`, and any checkpoint path whose classifier head depends on the class count. For SDA LTP, also pass matching `--num-classes` and `--dominant-class-id`; the default dominant id `3` assumes the 7-class FacadeWHU order where `facade` is id 3.
+When using ECP or any custom dataset with its own native classes, update every class-dependent setting before training: `configs/facade_classes.json`, `VCFS/train.py` `num_classes`, `VCFS/get_miou.py` `num_classes` and `name_classes`, `VCFS/predict.py` `name_classes`, and any checkpoint path whose classifier head depends on the class count. For SDA LTP, also pass matching `--num-classes` and `--dominant-class-id`; the default dominant id `3` assumes the 7-class FacadeWHU order where `facade` is id 3.
+
+Only remap labels when you deliberately want to use the default 7-class FacadeWHU configuration. In that case, convert masks into ids `0..6` following the FacadeWHU order above before running SDA or VCFS.
 
 For VCFS training, the final dataset should be under `VCFS/<dataset_name>/` and contain paired image/mask files plus split files. If you use the SDA pipeline, the prepared default target is `VCFS/facadewhu_extend/`; otherwise, set `VCFS_DATASET_PATH` or edit `VOCdevkit_path` in `VCFS/train.py` to your dataset folder.
 
