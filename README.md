@@ -15,7 +15,7 @@ VFM-FP is designed for facade parsing from street-view images. The public code i
 - **SDA**: data-level expansion and sample selection using diffusion/ControlNet generation and DINO feature-distance ranking.
 - **VCFS**: VFM-CNN fusion segmentor code for training, inference, and mIoU evaluation.
 
-This release preserves the accepted-paper algorithmic behavior while keeping local datasets, checkpoints, generated images, and experiment outputs outside the repository.
+This release preserves the accepted-paper algorithmic behavior while keeping local datasets, generated images, and experiment outputs outside the repository. A default MobileNet DeepLab checkpoint is included for public training and inference entrypoints.
 
 ## News
 
@@ -67,7 +67,7 @@ The original upstream environment files under `VCFS/` are preserved only as expe
 
 ## Data Preparation
 
-Large datasets, model weights, generated images, logs, and caches are intentionally excluded from this repository.
+Large datasets, generated images, logs, and caches are intentionally excluded from this repository. The default `VCFS/model_data/deeplab_mobilenetv2.pth` checkpoint is included so the VCFS entrypoints can run without an extra checkpoint download.
 
 The recommended workflow is:
 
@@ -176,7 +176,7 @@ VCFS_MIOU_OUT_PATH     mIoU prediction/output folder
 
 The algorithmic defaults in `VCFS/train.py` remain the code baseline: `Init_lr=2e-4`, `Unfreeze_batch_size=4`, Adam, cosine decay, and 200 epochs.
 
-Source-only release packages do not include datasets or weights. See `docs/data_and_weights.md` for expected paths and redistribution guidance.
+Release packages do not include datasets or generated training outputs. See `docs/data_and_weights.md` for expected paths and redistribution guidance.
 
 ## SDA: Data-Level Expansion
 
@@ -380,3 +380,4 @@ This repository builds on or interfaces with the following open-source ecosystem
 - DINOv2 from Facebook Research.
 - Hugging Face diffusers and transformers.
 - ControlNet models used through diffusers.
+

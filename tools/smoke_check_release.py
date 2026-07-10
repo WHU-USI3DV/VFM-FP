@@ -1,7 +1,7 @@
-"""Validate the source-only VFM-FP release tree.
+"""Validate the public VFM-FP release tree.
 
 The check is intentionally dependency-light. It verifies required public files,
-JSON syntax, and absence of datasets, checkpoints, generated media, caches, and
+JSON syntax, and absence of datasets, unexpected checkpoints, generated media, caches, and
 shell-specific public tooling.
 """
 
@@ -38,6 +38,7 @@ REQUIRED_FILES = [
     "VCFS/get_miou.py",
     "VCFS/deeplab.py",
     "VCFS/benchmark.py",
+    "VCFS/model_data/deeplab_mobilenetv2.pth",
     "VCFS/nets/deeplabv3_plus.py",
     "VCFS/utils/dataloader_latest.py",
     "VCFS/utils/split_utils.py",
@@ -95,6 +96,10 @@ FORBIDDEN_EXTENSIONS = {
 
 TEXT_EXTENSIONS = {".md", ".txt", ".json"}
 
+ALLOWED_BINARY_FILES = {
+    Path("VCFS/model_data/deeplab_mobilenetv2.pth"),
+}
+
 
 def is_under_git(path: Path, root: Path) -> bool:
     try:
@@ -124,7 +129,12 @@ def validate(root: Path) -> list[str]:
             continue
         if path.is_dir() and path.name in FORBIDDEN_DIR_NAMES:
             failures.append(f"Forbidden directory: {path.relative_to(root)}")
-        if path.is_file() and path.suffix.lower() in FORBIDDEN_EXTENSIONS:
+        rel_path = path.relative_to(root) if path.is_file() else None
+        if (
+            path.is_file()
+            and path.suffix.lower() in FORBIDDEN_EXTENSIONS
+            and rel_path not in ALLOWED_BINARY_FILES
+        ):
             failures.append(f"Forbidden file: {path.relative_to(root)}")
         if path.is_file() and path.suffix.lower() in TEXT_EXTENSIONS:
             text = path.read_text(encoding="utf-8", errors="ignore").lower()
@@ -154,3 +164,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

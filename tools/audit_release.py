@@ -1,7 +1,7 @@
 """Audit the workspace for files that should not be published.
 
 This script is intentionally read-only. It reports likely local artifacts,
-large files, model weights, datasets, caches, and generated outputs that should
+large files, unexpected model weights, datasets, caches, and generated outputs that should
 stay outside the public repository.
 """
 
@@ -59,6 +59,10 @@ GENERATED_MEDIA_EXTENSIONS = {
     ".tiff",
 }
 
+ALLOWED_ARTIFACT_FILES = {
+    Path("VCFS/model_data/deeplab_mobilenetv2.pth"),
+}
+
 
 def is_inside_named_dir(path: Path, names: set[str]) -> str | None:
     for part in path.parts:
@@ -82,6 +86,9 @@ def audit(root: Path, large_mb: int) -> list[tuple[str, Path, int]]:
 
     for path in iter_files(root):
         rel = path.relative_to(root)
+        if rel in ALLOWED_ARTIFACT_FILES:
+            continue
+
         size = path.stat().st_size
         suffix = path.suffix.lower()
 
@@ -127,3 +134,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+

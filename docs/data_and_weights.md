@@ -1,6 +1,8 @@
 # Data and Weights
 
-This repository intentionally excludes local experiment data and trained artifacts. Keep datasets, checkpoints, generated images, logs, and caches outside git.
+This repository intentionally excludes local experiment data and generated training artifacts. Keep datasets, generated images, logs, and caches outside git.
+
+The public release includes `VCFS/model_data/deeplab_mobilenetv2.pth`, the default MobileNet DeepLab checkpoint used by the VCFS training and inference entrypoints.
 
 ## Expected Local Paths
 
@@ -65,7 +67,7 @@ Current local path conventions are summarized in `configs/paths.example.json`.
 
 ## Files to Exclude From Git
 
-- `*.pth`, `*.pt`, `*.ckpt`, `*.bin`, `*.safetensors`
+- `*.pth`, `*.pt`, `*.ckpt`, `*.bin`, `*.safetensors`, except the included `VCFS/model_data/deeplab_mobilenetv2.pth`
 - raw images, generated synthetic images, visualization images, and masks
 - `logs/`, `miou_out*/`, `debug/`, and paper visualization outputs
 - dataset zips and other archives
@@ -75,10 +77,11 @@ Current local path conventions are summarized in `configs/paths.example.json`.
 
 For the public repository, publish one of these:
 
-1. Download links for datasets and trained weights, with checksums.
+1. Download links for datasets and additional trained weights, with checksums.
 2. A small sample dataset containing only a few permissively shareable examples.
 3. Scripts that create required directory placeholders.
 
-Do not publish datasets or pretrained weights unless their licenses and redistribution permissions are clear.
+Do not publish datasets or additional pretrained weights unless their licenses and redistribution permissions are clear.
 
 Before publishing repository updates, run the audit scripts from the repository root to check for accidental datasets, weights, generated media, caches, or local paths.
+

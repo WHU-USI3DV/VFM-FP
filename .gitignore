@@ -29,6 +29,8 @@ model_data/*.tar
 *.onnx
 *.bin
 *.safetensors
+!VCFS/model_data/
+!VCFS/model_data/deeplab_mobilenetv2.pth
 
 # Datasets and generated imagery
 VOCdevkit/
@@ -83,3 +85,4 @@ img_out/
 
 # Local release copies
 release/
+

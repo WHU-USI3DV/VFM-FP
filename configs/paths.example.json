@@ -20,7 +20,8 @@
     "seed_record": "SDA_output/txt/Seed_record.txt"
   },
   "notes": [
-    "This file documents public example paths only; datasets, generated images, checkpoints, and caches are not included.",
+    "This file documents public example paths only; datasets, generated images, extra checkpoints, and caches are not included.",
     "Mul_Ab_norway.py and Extract_Cul*.py remain compatibility entrypoints for reproducing older experiment defaults."
   ]
 }
+

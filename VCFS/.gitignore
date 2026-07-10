@@ -7,6 +7,8 @@ Medical_Datasets/
 lfw/
 logs/
 model_data/
+!model_data/
+!model_data/deeplab_mobilenetv2.pth
 .temp_miou_out/
 
 # Byte-compiled / optimized / DLL files

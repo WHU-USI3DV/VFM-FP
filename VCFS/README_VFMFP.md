@@ -55,4 +55,4 @@ python train.py
 
 The inherited `README.md` comes from the upstream DeepLabv3+ baseline. This VFM-FP-specific README is the preferred public entry for this folder.
 
-Do not commit local `logs/`, `.pth` checkpoints, mIoU outputs, VOC data folders, or generated images.
+Do not commit local `logs/`, extra `.pth` checkpoints, mIoU outputs, VOC data folders, or generated images. The included `model_data/deeplab_mobilenetv2.pth` is the only checkpoint kept in git.
