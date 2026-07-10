@@ -2,7 +2,8 @@
 import os
 from functools import partial
 
-os.environ["CUDA_VISIBLE_DEVICES"]='0'
+if os.environ.get("VCFS_CUDA_VISIBLE_DEVICES"):
+    os.environ["CUDA_VISIBLE_DEVICES"] = os.environ["VCFS_CUDA_VISIBLE_DEVICES"]
 ###0414###VLM-FP2
 
 import numpy as np

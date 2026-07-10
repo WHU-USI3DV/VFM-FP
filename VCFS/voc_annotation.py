@@ -1,98 +1,77 @@
+"""Create VOC-style train/val/test split files for a segmentation dataset."""
+
+from __future__ import annotations
+
 import os
 import random
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-#-------------------------------------------------------#
-#   想要增加测试集修改trainval_percent 
-#   修改train_percent用于改变验证集的比例 9:1
-#   
-#   当前该库将测试集当作验证集使用，不单独划分测试集
-#-------------------------------------------------------#
-trainval_percent    = 1
-train_percent       = 0.9
-#-------------------------------------------------------#
-#   指向VOC数据集所在的文件夹
-#   默认指向根目录下的VOC数据集
-#-------------------------------------------------------#
-VOCdevkit_path      = 'ecp_0619_refine'
+
+def _env_float(name, current):
+    value = os.environ.get(name)
+    return current if value in (None, "") else float(value)
+
+
+def main():
+    dataset_path = Path(os.environ.get("VCFS_DATASET_PATH", "facadewhu_extend"))
+    trainval_percent = _env_float("VCFS_TRAINVAL_PERCENT", 1.0)
+    train_percent = _env_float("VCFS_TRAIN_PERCENT", 0.9)
+
+    seg_dir = dataset_path / "SegmentationClass"
+    split_dir = dataset_path / "txt"
+    split_dir.mkdir(parents=True, exist_ok=True)
+
+    if not seg_dir.exists():
+        raise FileNotFoundError(f"SegmentationClass directory not found: {seg_dir}")
+
+    random.seed(0)
+    masks = sorted(path for path in seg_dir.iterdir() if path.suffix.lower() == ".png")
+    total = len(masks)
+    trainval_count = int(total * trainval_percent)
+    train_count = int(trainval_count * train_percent)
+    indices = list(range(total))
+    trainval_indices = set(random.sample(indices, trainval_count))
+    train_indices = set(random.sample(sorted(trainval_indices), train_count))
+
+    splits = {
+        "trainval.txt": [],
+        "train.txt": [],
+        "val.txt": [],
+        "test.txt": [],
+    }
+    for index, mask_path in enumerate(masks):
+        image_id = mask_path.stem
+        if index in trainval_indices:
+            splits["trainval.txt"].append(image_id)
+            target = "train.txt" if index in train_indices else "val.txt"
+            splits[target].append(image_id)
+        else:
+            splits["test.txt"].append(image_id)
+
+    for name, values in splits.items():
+        (split_dir / name).write_text("\n".join(values) + ("\n" if values else ""), encoding="utf-8")
+
+    print(f"Dataset: {dataset_path}")
+    print(f"Masks: {total}, trainval: {len(splits['trainval.txt'])}, train: {len(splits['train.txt'])}, val: {len(splits['val.txt'])}, test: {len(splits['test.txt'])}")
+
+    class_counts = np.zeros([256], dtype=np.int64)
+    for mask_path in tqdm(masks, desc="Checking masks"):
+        mask = np.array(Image.open(mask_path), np.uint8)
+        if mask.ndim > 2:
+            raise ValueError(f"Mask must be single-channel id image: {mask_path}")
+        class_counts += np.bincount(mask.reshape(-1), minlength=256)
+
+    used_ids = [index for index, count in enumerate(class_counts) if count > 0]
+    print("Used label ids:", used_ids)
+    if class_counts[255] > 0 and class_counts[0] > 0 and np.sum(class_counts[1:255]) == 0:
+        print("Warning: masks contain only 0 and 255. Convert binary labels to class ids 0 and 1 before training.")
+    elif class_counts[0] > 0 and np.sum(class_counts[1:]) == 0:
+        print("Warning: masks contain only background pixels.")
+
 
 if __name__ == "__main__":
-    random.seed(0)
-    print("Generate txt in ImageSets.")
-    segfilepath     = os.path.join(VOCdevkit_path, 'SegmentationClass')
-    saveBasePath    = os.path.join(VOCdevkit_path, 'txt')
-    
-    temp_seg = os.listdir(segfilepath)
-    total_seg = []
-    for seg in temp_seg:
-        if seg.endswith(".png"):
-            total_seg.append(seg)
-
-    num     = len(total_seg)  
-    list    = range(num)  
-    tv      = int(num*trainval_percent)  
-    tr      = int(tv*train_percent)  
-    trainval= random.sample(list,tv)  
-    train   = random.sample(trainval,tr)  
-    
-    print("train and val size",tv)
-    print("traub suze",tr)
-    ftrainval   = open(os.path.join(saveBasePath,'trainval.txt'), 'w')  
-    ftest       = open(os.path.join(saveBasePath,'test.txt'), 'w')  
-    ftrain      = open(os.path.join(saveBasePath,'train.txt'), 'w')  
-    fval        = open(os.path.join(saveBasePath,'val.txt'), 'w')  
-    
-    for i in list:  
-        name = total_seg[i][:-4]+'\n'  
-        if i in trainval:  
-            ftrainval.write(name)  
-            if i in train:  
-                ftrain.write(name)  
-            else:  
-                fval.write(name)  
-        else:  
-            ftest.write(name)  
-    
-    ftrainval.close()  
-    ftrain.close()  
-    fval.close()  
-    ftest.close()
-    print("Generate txt in ImageSets done.")
-
-    print("Check datasets format, this may take a while.")
-    print("检查数据集格式是否符合要求，这可能需要一段时间。")
-    classes_nums        = np.zeros([256], int)
-    for i in tqdm(list):
-        name            = total_seg[i]
-        png_file_name   = os.path.join(segfilepath, name)
-        if not os.path.exists(png_file_name):
-            raise ValueError("未检测到标签图片%s，请查看具体路径下文件是否存在以及后缀是否为png。"%(png_file_name))
-        
-        png             = np.array(Image.open(png_file_name), np.uint8)
-        if len(np.shape(png)) > 2:
-            print("标签图片%s的shape为%s，不属于灰度图或者八位彩图，请仔细检查数据集格式。"%(name, str(np.shape(png))))
-            print("标签图片需要为灰度图或者八位彩图，标签的每个像素点的值就是这个像素点所属的种类。"%(name, str(np.shape(png))))
-
-        classes_nums += np.bincount(np.reshape(png, [-1]), minlength=256)
-            
-    print("打印像素点的值与数量。")
-    print('-' * 37)
-    print("| %15s | %15s |"%("Key", "Value"))
-    print('-' * 37)
-    for i in range(256):
-        if classes_nums[i] > 0:
-            print("| %15s | %15s |"%(str(i), str(classes_nums[i])))
-            print('-' * 37)
-    
-    if classes_nums[255] > 0 and classes_nums[0] > 0 and np.sum(classes_nums[1:255]) == 0:
-        print("检测到标签中像素点的值仅包含0与255，数据格式有误。")
-        print("二分类问题需要将标签修改为背景的像素点值为0，目标的像素点值为1。")
-    elif classes_nums[0] > 0 and np.sum(classes_nums[1:]) == 0:
-        print("检测到标签中仅仅包含背景像素点，数据格式有误，请仔细检查数据集格式。")
-
-    print("JPEGImages中的图片应当为.jpg文件、SegmentationClass中的图片应当为.png文件。")
-    print("如果格式有误，参考:")
-    print("https://github.com/bubbliiiing/segmentation-format-fix")
+    main()

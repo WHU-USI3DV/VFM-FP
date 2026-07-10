@@ -43,11 +43,11 @@ Use a VOC-style directory:
 
 If `train_1601.txt` is missing but `train.txt` exists, the split loader falls back to `train.txt`. Use `VCFS_CLASS_CONFIG` to select the matching class metadata before training, prediction, or mIoU evaluation.
 
-PowerShell example:
+Shell example:
 
-```powershell
-$env:VCFS_CLASS_CONFIG="../configs/classes.ecp.json"
-$env:VCFS_DATASET_PATH="ecp_0619_refine"
+```bash
+export VCFS_CLASS_CONFIG=../configs/classes.ecp.json
+export VCFS_DATASET_PATH=ecp_0619_refine
 python train.py
 ```
 

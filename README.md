@@ -99,14 +99,7 @@ Class-dependent settings are stored in JSON files under `configs/`:
 
 `VCFS/train.py`, `VCFS/deeplab.py`, `VCFS/predict.py`, and `VCFS/get_miou.py` read `VCFS_CLASS_CONFIG`. If the variable is not set, the default is `configs/classes.facadewhu.json`.
 
-PowerShell example:
-
-```powershell
-$env:VCFS_CLASS_CONFIG="configs/classes.facadewhu.json"
-$env:VCFS_DATASET_PATH="facadewhu_extend"
-```
-
-Bash example:
+Shell example:
 
 ```bash
 export VCFS_CLASS_CONFIG=configs/classes.facadewhu.json
@@ -154,9 +147,9 @@ background, wall, window, door, balcony, roof, shop, sky, chimney
 
 For ECP training, set the ECP class config and dataset path before running VCFS:
 
-```powershell
-$env:VCFS_CLASS_CONFIG="configs/classes.ecp.json"
-$env:VCFS_DATASET_PATH="ecp_0619_refine"
+```bash
+export VCFS_CLASS_CONFIG=configs/classes.ecp.json
+export VCFS_DATASET_PATH=ecp_0619_refine
 cd VCFS
 python train.py
 ```
@@ -253,7 +246,7 @@ By default, this reads `SDA_output/scf/scf_keep.txt` and `SDA_output/txt/synthet
 
 After SDA, `VCFS/facadewhu_extend/txt/train_1601.txt` should contain the original training samples plus the SCF-retained `syn_*` samples. If your dataset already has `txt/train_1601.txt`, `txt/val.txt`, `txt/trainval.txt`, and related split files, you can skip this step.
 
-Otherwise, edit `VOCdevkit_path` in `VCFS/voc_annotation.py` to point to your dataset folder, then run:
+Otherwise, set `VCFS_DATASET_PATH` to your dataset folder, then run:
 
 ```bash
 cd VCFS
@@ -264,18 +257,18 @@ python voc_annotation.py
 
 Prefer configuring dataset-specific settings with environment variables:
 
-```powershell
-$env:VCFS_CLASS_CONFIG="configs/classes.facadewhu.json"
-$env:VCFS_DATASET_PATH="facadewhu_extend"
-$env:VCFS_BATCH_SIZE="4"
-$env:VCFS_EPOCHS="200"
+```bash
+export VCFS_CLASS_CONFIG=configs/classes.facadewhu.json
+export VCFS_DATASET_PATH=facadewhu_extend
+export VCFS_BATCH_SIZE=4
+export VCFS_EPOCHS=200
 ```
 
 For ECP native-class training:
 
-```powershell
-$env:VCFS_CLASS_CONFIG="configs/classes.ecp.json"
-$env:VCFS_DATASET_PATH="ecp_0619_refine"
+```bash
+export VCFS_CLASS_CONFIG=configs/classes.ecp.json
+export VCFS_DATASET_PATH=ecp_0619_refine
 ```
 
 The main source locations are still easy to find when you want to change defaults permanently:
@@ -324,14 +317,13 @@ dir_save_path = "path/to/output"
 
 ### 5. Evaluate mIoU
 
-Edit the dataset and output settings in `VCFS/get_miou.py`:
+Set the dataset, class config, and output settings before evaluation:
 
-- `VOCdevkit_path`
-- `image_ids`
-- `gt_dir`
-- `miou_out_path`
-- `num_classes`
-- `name_classes`
+```bash
+export VCFS_CLASS_CONFIG=configs/classes.facadewhu.json
+export VCFS_DATASET_PATH=facadewhu_extend
+export VCFS_MIOU_OUT_PATH=miou_out
+```
 
 Then run:
 
@@ -355,10 +347,9 @@ Use it when you need parameters, FLOPs, GPU memory, or FPS statistics.
 
 Run these checks before publishing changes:
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/smoke_check.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/audit_release.ps1 -Root . -Limit 100
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/content_audit.ps1 -Root . -Limit 100
+```bash
+python tools/smoke_check_release.py .
+python tools/audit_release.py --root . --limit 100
 python tools/syntax_check_release.py .
 ```
 

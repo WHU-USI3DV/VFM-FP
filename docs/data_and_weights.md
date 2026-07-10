@@ -48,9 +48,9 @@ ECP training should use the original ECP class ids directly; remapping is only n
 
 For VCFS, set:
 
-```powershell
-$env:VCFS_CLASS_CONFIG="configs/classes.ecp.json"
-$env:VCFS_DATASET_PATH="ecp_0619_refine"
+```bash
+export VCFS_CLASS_CONFIG=configs/classes.ecp.json
+export VCFS_DATASET_PATH=ecp_0619_refine
 ```
 
 For SDA LTP on ECP or a custom dataset, pass the same class config:

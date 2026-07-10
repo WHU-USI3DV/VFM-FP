@@ -4,7 +4,7 @@
     "train_dataset_dir": "VCFS/facadewhu_extend",
     "train_split": "txt/train_1601.txt",
     "val_split": "txt/val.txt",
-    "class_config": "configs/facade_classes.json",
+    "class_config": "configs/classes.facadewhu.json",
     "weights_dir": "VCFS/logs",
     "pretrained_dir": "VCFS/model_data"
   },

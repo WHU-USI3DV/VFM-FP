@@ -138,7 +138,6 @@ class DeeplabV3(object):
         self.net = DeepLab(num_classes=self.num_classes, backbone=self.backbone, downsample_factor=self.downsample_factor, pretrained=False)
 
         device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        print("111:", self.model_path)
         self.net.load_state_dict(torch.load(self.model_path, map_location=device))
         self.net    = self.net.eval()
         print('{} model, and classes loaded.'.format(self.model_path))
@@ -151,6 +150,8 @@ class DeeplabV3(object):
     #   检测图片
     #---------------------------------------------------#
     def detect_image(self, image, count=False, name_classes=None):
+        if name_classes is None:
+            name_classes = self.name_classes
         #---------------------------------------------------------#
         #   在这里将图像转换成RGB图像，防止灰度图在预测时报错。
         #   代码仅仅支持RGB图像的预测，所有其它类型的图像都会转化成RGB
