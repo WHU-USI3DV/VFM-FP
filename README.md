@@ -15,7 +15,7 @@ VFM-FP is designed for facade parsing from street-view images. The public code i
 - **SDA**: data-level expansion and sample selection using diffusion/ControlNet generation and DINO feature-distance ranking.
 - **VCFS**: VFM-CNN fusion segmentor code for training, inference, and mIoU evaluation.
 
-This release preserves the accepted-paper algorithmic behavior while keeping local datasets, generated images, and experiment outputs outside the repository. A default MobileNet DeepLab checkpoint is included for public training and inference entrypoints.
+Local datasets, generated images, and experiment outputs are kept outside the repository. A default MobileNet DeepLab checkpoint is included for training and inference.
 
 ## News
 
@@ -63,11 +63,11 @@ pip install -r requirements/sda.txt
 
 Python 3.10 is the recommended public-release baseline. `VCFS` loads DINOv2 through `torch.hub`, and the current upstream DINOv2 hub code uses Python 3.10 syntax. Python 3.8 may still work only if you already have a compatible local Torch Hub cache snapshot.
 
-The original upstream environment files under `VCFS/` are preserved only as experiment references. Prefer the curated files under `requirements/` for a public release.
+Use the dependency files under `requirements/` for installation.
 
 ## Data Preparation
 
-Large datasets, generated images, logs, and caches are intentionally excluded from this repository. The default `VCFS/model_data/deeplab_mobilenetv2.pth` checkpoint is included so the VCFS entrypoints can run without an extra checkpoint download.
+Large datasets, generated images, logs, and caches are intentionally excluded from this repository. The default `VCFS/model_data/deeplab_mobilenetv2.pth` checkpoint is included for VCFS training and inference.
 
 The recommended workflow is:
 
@@ -380,4 +380,3 @@ This repository builds on or interfaces with the following open-source ecosystem
 - DINOv2 from Facebook Research.
 - Hugging Face diffusers and transformers.
 - ControlNet models used through diffusers.
-

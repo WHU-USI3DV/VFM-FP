@@ -1,4 +1,4 @@
-"""Compatibility entrypoint for the FacadeWHU DINO generated-image ranking run."""
+"""Run DINO ranking with the FacadeWHU preset."""
 
 from dino_rank_generated import main
 

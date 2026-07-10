@@ -1,9 +1,4 @@
-"""Configurable DINOv2 feature-distance ranking for generated facade images.
-
-The default presets used by Extract_Cul*.py preserve the accepted-paper
-experiment paths and output formats. Imports for torch/torchvision/PIL happen
-inside run_ranking so --help does not initialize or download models.
-"""
+"""Rank generated facade images with DINOv2 feature distance."""
 
 import argparse
 import os

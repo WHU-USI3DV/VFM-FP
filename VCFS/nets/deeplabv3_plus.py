@@ -1,9 +1,4 @@
-"""Active VFM-FP DeepLabv3+ network definition.
-
-Historical commented experiment variants were removed from the public release to
-keep the implementation readable. The active DINO-fusion model below is kept
-unchanged.
-"""
+"""VFM-FP DeepLabv3+ network definition."""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

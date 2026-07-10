@@ -1,15 +1,4 @@
-"""Semantic Diffusion Augmentation (SDA) image generation.
-
-This is the paper-aligned public entrypoint for the SDA generation stage. It
-combines:
-
-- DDE: prompt combinations over location, time, and weather domains.
-- LTP: long-tail preference allocation from semantic masks.
-- structural controls: Canny edges, semantic masks, and depth maps.
-
-Heavy ML imports and model initialization are delayed until generation starts,
-so ``--help`` and argument inspection work in lightweight environments.
-"""
+"""Generate synthetic facade images with SDA."""
 
 import argparse
 import json

@@ -1,4 +1,4 @@
-"""Compatibility entrypoint for the ECP DINO generated-image ranking run."""
+"""Run DINO ranking with the ECP preset."""
 
 from dino_rank_generated import main
 

@@ -2,7 +2,7 @@
 
 This repository intentionally excludes local experiment data and generated training artifacts. Keep datasets, generated images, logs, and caches outside git.
 
-The public release includes `VCFS/model_data/deeplab_mobilenetv2.pth`, the default MobileNet DeepLab checkpoint used by the VCFS training and inference entrypoints.
+`VCFS/model_data/deeplab_mobilenetv2.pth` is included as the default MobileNet DeepLab checkpoint for VCFS training and inference.
 
 ## Expected Local Paths
 
@@ -84,4 +84,3 @@ For the public repository, publish one of these:
 Do not publish datasets or additional pretrained weights unless their licenses and redistribution permissions are clear.
 
 Before publishing repository updates, run the audit scripts from the repository root to check for accidental datasets, weights, generated media, caches, or local paths.
-

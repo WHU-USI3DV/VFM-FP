@@ -1,9 +1,4 @@
-"""Compatibility entrypoint for the original Norway SDA generation run.
-
-The general paper-aligned SDA implementation lives in
-``semantic_diffusion_augmentation.py``. This wrapper preserves the previous
-Norway defaults for reproducing the accepted-paper cross-domain setting.
-"""
+"""Run SDA generation with the Norway preset."""
 
 from semantic_diffusion_augmentation import main
 

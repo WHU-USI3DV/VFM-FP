@@ -2,7 +2,7 @@
 
 SDA contains the Semantic Diffusion Augmentation workflow used before training the facade parser.
 
-The public SDA code follows the paper design:
+SDA follows the paper design:
 
 1. Diverse Domain Extension (DDE): generate style-diverse facade images with location, time, and weather prompts.
 2. Long-Tail Preference (LTP): allocate more generated images to source images containing long-tail classes.
@@ -10,7 +10,7 @@ The public SDA code follows the paper design:
 
 ## Main Scripts
 
-- `diffusion/semantic_diffusion_augmentation.py`: main paper-aligned SDA generation entrypoint.
+- `diffusion/semantic_diffusion_augmentation.py`: SDA generation script.
 - `diffusion/Mul_Ab_norway.py`: compatibility wrapper for the original Norway defaults.
 - `diffusion/voc_annotation.py`: split-file helper for generated outputs.
 - `DINO_extract/semantic_consistency_filter.py`: SCF wrapper using DINOv2 mean-plus-std filtering.

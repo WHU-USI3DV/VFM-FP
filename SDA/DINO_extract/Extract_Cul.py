@@ -1,4 +1,4 @@
-"""Compatibility entrypoint for the default DINO generated-image ranking run."""
+"""Run DINO ranking with the default preset."""
 
 from dino_rank_generated import main
 
