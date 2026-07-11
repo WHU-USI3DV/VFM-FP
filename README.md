@@ -1,14 +1,13 @@
 # VFM-FP
 
-<a href="https://github.com/" target="_blank">Leveraging Visual Foundation Model Priors for Facade Parsing from Street View Images</a>
+<a href="https://doi.org/10.1016/j.inffus.2026.104593" target="_blank">Leveraging Visual Foundation Model Priors for Facade Parsing from Street View Images</a>
 
-This repository contains the source code for VFM-FP, a street-view facade parsing workflow that combines data-level synthetic data augmentation with semantic segmentation training and inference.
+This is the PyTorch implementation about VFM-FP, a street-view facade parsing workflow that leverages prior knowledge of VFMs for data augmentation and feature fusion.
 
 > **Leveraging Visual Foundation Model Priors for Facade Parsing from Street View Images**  
-> Zhe Chen; Qingwen Tan; Fuxun Liang; Chen Long; Pangyin Li; Zhiming Liu; Junjie Chen; Zhen Dong  
-> Accepted manuscript. Official DOI and publication metadata are pending in `docs/citation_template.md`.
+> [Zhe Chen](https://chenzhe-code.github.io/); [Qingwen Tan](https://github.com/TanQingw); [Fuxun Liang](https://liangfxwhu.github.io/); [Chen Long](https://chenlongwhu.github.io/); [Pangyin Li](https://dongzhenwhu.github.io/team/index.html); [Zhiming Liu](https://liesmars.whu.edu.cn/yjry/gdyjry.htm); [Junjie Chen](https://www.arch.hku.hk/staff/rec/chen-junjie/); [Zhen Dong](https://dongzhenwhu.github.io/)  
 
-## Introduction
+## 🔭 Introduction
 
 VFM-FP is designed for facade parsing from street-view images. The public code is organized around two parts:
 
@@ -17,13 +16,7 @@ VFM-FP is designed for facade parsing from street-view images. The public code i
 
 Local datasets, generated images, and experiment outputs are kept outside the repository. A default MobileNet DeepLab checkpoint is included for training and inference.
 
-## News
-
-- 2026-07-09: Public source code released on GitHub.
-- 2026-07-04: The segmentation module was renamed to `VCFS`, short for VFM-CNN fusion segmentor.
-- 2026-07-04: Final PDF metadata was used to fill the citation draft title and author list.
-
-## Repository Layout
+## 🆕 Repository Layout
 
 ```text
 .
@@ -42,7 +35,7 @@ Local datasets, generated images, and experiment outputs are kept outside the re
 `-- tools/                       # Release generation and audit tools
 ```
 
-## Environment
+## 🔧 Environment
 
 The code was cleaned to keep dependency lists small and readable. Install the PyTorch build that matches your CUDA version.
 
@@ -65,7 +58,7 @@ Python 3.10 is the recommended public-release baseline. `VCFS` loads DINOv2 thro
 
 Use the dependency files under `requirements/` for installation.
 
-## Data Preparation
+## 💾 Data Preparation
 
 Large datasets, generated images, logs, and caches are intentionally excluded from this repository. The default `VCFS/model_data/deeplab_mobilenetv2.pth` checkpoint is included for VCFS training and inference.
 
@@ -178,7 +171,7 @@ The algorithmic defaults in `VCFS/train.py` remain the code baseline: `Init_lr=2
 
 Release packages do not include datasets or generated training outputs. See `docs/data_and_weights.md` for expected paths and redistribution guidance.
 
-## SDA: Data-Level Expansion
+## 🔦 SDA: Data-Level Expansion
 
 SDA is the first stage of the VFM-FP workflow. It expands the original facade parsing data, filters generated samples, and prepares the augmented VOC-style dataset used by VCFS training.
 
@@ -240,7 +233,7 @@ python SDA/prepare_vcfs_augmented_dataset.py \
 
 By default, this reads `SDA_output/scf/scf_keep.txt` and `SDA_output/txt/synthetic_pairs.csv`, writes retained synthetic samples into `VCFS/facadewhu_extend`, and creates `txt/train_1601.txt` from `txt/train.txt` plus retained `syn_*` samples. The script validates that every split id has paired image and mask files before writing the augmented training split. `SDA/diffusion/voc_annotation.py` is still kept as a simple split-file helper when needed.
 
-## VCFS: Train and Use the Facade Parsing Segmentor
+## ✏️ VCFS: Train and Use the Facade Parsing Segmentor
 
 ### 1. Confirm augmented split files
 
@@ -360,11 +353,19 @@ The latest checked public code passed:
 - Python syntax check
 - static local-import check
 
-## Citation
+## 💡 Citation
 
-The citation draft is stored in `docs/citation_template.md`. It already contains the paper title and author list extracted from the final PDF metadata.
+If you use this code, please cite:
 
-Do not add a root `CITATION.cff` until official year, journal issue details, pages, and DOI are available.
+```bibtex
+@article{chen2026vfmfp,
+  title = {Leveraging Visual Foundation Model Priors for Facade Parsing from Street View Images},
+  author = {Chen, Zhe and Tan, Qingwen and Liang, Fuxun and Long, Chen and Li, Pangyin and Liu, Zhiming and Chen, Junjie and Dong, Zhen},
+  journal = {Information Fusion},
+  year = {2026},
+  doi = {10.1016/j.inffus.2026.104593}
+}
+```
 
 ## License
 

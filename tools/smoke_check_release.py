@@ -21,7 +21,6 @@ REQUIRED_FILES = [
     "configs/paths.example.json",
     "requirements/segmentation.txt",
     "requirements/sda.txt",
-    "docs/citation_template.md",
     "docs/data_and_weights.md",
     "docs/legacy_notes.md",
     "docs/licensing.md",
@@ -164,4 +163,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
