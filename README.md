@@ -101,19 +101,13 @@ For a new dataset, copy one of the class config files and update `num_classes`, 
 
 ### FacadeWHU Setup
 
-The default FacadeWHU-style class order is:
+For FacadeWHU-style training, keep the label ids in this order and use `configs/classes.facadewhu.json`:
 
 ```text
-0 background
-1 window
-2 door
-3 facade
-4 balcony
-5 roof
-6 shop
+background, window, door, facade, balcony, roof, shop
 ```
 
-Place the original data used by SDA at:
+Place the original data used by SDA in a VOC-style folder:
 
 ```text
 FacadeWHU_origin/
@@ -127,13 +121,15 @@ FacadeWHU_origin/
 
 The augmented VCFS dataset is written under `VCFS/facadewhu_extend/` after SDA and SCF.
 
-### ECP or Another Dataset
+### ECP Setup
 
-For ECP, keep the original label ids and use `configs/classes.ecp.json`:
+For ECP training, keep the original label ids in this order and use `configs/classes.ecp.json`:
 
 ```text
 background, wall, window, door, balcony, roof, shop, sky, chimney
 ```
+
+Place the ECP data in the same VOC-style folder structure, then pass that dataset path when running SDA or VCFS.
 
 For another dataset, create a matching class config under `configs/` and keep the masks encoded with that class order.
 
