@@ -71,15 +71,9 @@ Python 3.10 is the recommended public-release baseline. `VCFS` loads DINOv2 thro
 Use the dependency files under `requirements/` for installation.
 
 ## 💾 Data Preparation
-Large datasets, generated images, logs, and caches are intentionally excluded from this repository. The default `VCFS/model_data/deeplab_mobilenetv2.pth` checkpoint is included for VCFS training and inference.
+The default `VCFS/model_data/deeplab_mobilenetv2.pth` checkpoint is included for VCFS training and inference. Large datasets, generated images, logs, and caches are intentionally excluded from the repository.
 
-The recommended workflow is:
-
-1. Organize the dataset into the VOC-style folder structure required by VCFS.
-2. Run SDA on the original training set to generate and filter augmented samples.
-3. Build the augmented VCFS dataset and train VCFS on that augmented split.
-
-All datasets must use single-channel label masks. Each pixel value in `SegmentationClass/*.png` must be a class id, not an RGB color:
+Prepare each dataset in VOC-style folders:
 
 ```text
 <dataset_root>/
@@ -94,6 +88,8 @@ All datasets must use single-channel label masks. Each pixel value in `Segmentat
     `-- test.txt
 ```
 
+All label masks under `SegmentationClass/` must be single-channel images whose pixel values are class ids, not RGB colors.
+
 ### Dataset Configs
 
 Dataset-dependent settings are stored in JSON files under `configs/`:
@@ -101,20 +97,11 @@ Dataset-dependent settings are stored in JSON files under `configs/`:
 - `configs/classes.facadewhu.json`: FacadeWHU 7-class setup.
 - `configs/classes.ecp.json`: ECP 9-class setup.
 
-`VCFS/train.py` can read the dataset and class config directly from command-line arguments. If no class config is provided, the default is `configs/classes.facadewhu.json`.
+For a new dataset, copy one of the class config files and update `num_classes`, `classes`, `colors_rgb`, and `dominant_class_id`. `dominant_class_id` is used by SDA LTP; for FacadeWHU it is `3` because `facade` is class id 3.
 
-Training example:
+### FacadeWHU Setup
 
-```bash
-cd VCFS
-python train.py --class-config ../configs/classes.facadewhu.json --dataset-path facadewhu_extend
-```
-
-You may also pass `--num-classes`, but the safer workflow is to edit or create a matching class JSON file.
-
-### Default FacadeWHU Setup
-
-The public defaults are configured for the FacadeWHU-style 7-class facade parser:
+The default FacadeWHU-style class order is:
 
 ```text
 0 background
@@ -138,44 +125,17 @@ FacadeWHU_origin/
     `-- val.txt
 ```
 
-The default SDA output is `SDA_output/`. After SCF, run `SDA/prepare_vcfs_augmented_dataset.py` to create the augmented VCFS dataset under `VCFS/facadewhu_extend/`, including `txt/train_1601.txt`.
+The augmented VCFS dataset is written under `VCFS/facadewhu_extend/` after SDA and SCF.
 
 ### ECP or Another Native-Class Dataset
 
-ECP does not need to be remapped before training. Keep the original ECP class ids and train directly on native ECP labels. The example native ECP config is:
+ECP does not need to be remapped before training. Keep the original ECP class ids and train directly on native ECP labels with `configs/classes.ecp.json`:
 
 ```text
-configs/classes.ecp.json
 background, wall, window, door, balcony, roof, shop, sky, chimney
 ```
 
-For ECP training, pass the ECP class config and dataset path in the same command:
-
-```bash
-cd VCFS
-python train.py --class-config ../configs/classes.ecp.json --dataset-path ecp_0619_refine
-```
-
 Only remap ECP masks if you deliberately want to merge ECP into the default FacadeWHU 7-class setup. In that case, convert masks into ids `0..6` following the FacadeWHU order before running SDA or VCFS, and use `configs/classes.facadewhu.json`.
-
-For a new dataset, copy one of the class config files, update `num_classes`, `classes`, `colors_rgb`, and `dominant_class_id`, then pass that file with `--class-config`. `dominant_class_id` is used by SDA LTP; for FacadeWHU it is `3` because `facade` is class id 3.
-
-### Where To Change Runtime Settings
-
-Use command-line arguments for training, so you do not have to edit source files for every dataset:
-
-```text
---class-config         class metadata JSON
---dataset-path         dataset folder under VCFS/ or an absolute dataset path
---model-path           checkpoint path for training resume
---input-shape          input size, for example 512,512 or 512x512
---batch-size           unfreeze-stage batch size
---epochs               total training epochs
---save-dir             training log/checkpoint output folder
---num-workers          DataLoader worker count
-```
-
-The algorithmic defaults in `VCFS/train.py` remain the code baseline: `Init_lr=2e-4`, `Unfreeze_batch_size=4`, Adam, cosine decay, and 200 epochs.
 
 Release packages do not include datasets or generated training outputs. See `docs/data_and_weights.md` for expected paths and redistribution guidance.
 
@@ -267,6 +227,8 @@ For ECP native-class training:
 ```bash
 python train.py --class-config ../configs/classes.ecp.json --dataset-path ecp_0619_refine --batch-size 4 --epochs 200
 ```
+
+For a new dataset, pass the matching class JSON with `--class-config`. You may also pass `--num-classes`, but editing or creating a matching class JSON file is safer.
 
 The main source locations are still easy to find when you want to change defaults permanently:
 
