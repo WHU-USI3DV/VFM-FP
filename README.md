@@ -127,15 +127,15 @@ FacadeWHU_origin/
 
 The augmented VCFS dataset is written under `VCFS/facadewhu_extend/` after SDA and SCF.
 
-### ECP or Another Native-Class Dataset
+### ECP or Another Dataset
 
-ECP does not need to be remapped before training. Keep the original ECP class ids and train directly on native ECP labels with `configs/classes.ecp.json`:
+For ECP, keep the original label ids and use `configs/classes.ecp.json`:
 
 ```text
 background, wall, window, door, balcony, roof, shop, sky, chimney
 ```
 
-Only remap ECP masks if you deliberately want to merge ECP into the default FacadeWHU 7-class setup. In that case, convert masks into ids `0..6` following the FacadeWHU order before running SDA or VCFS, and use `configs/classes.facadewhu.json`.
+For another dataset, create a matching class config under `configs/` and keep the masks encoded with that class order.
 
 Release packages do not include datasets or generated training outputs. See `docs/data_and_weights.md` for expected paths and redistribution guidance.
 
