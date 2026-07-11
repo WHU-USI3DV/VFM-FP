@@ -61,7 +61,6 @@ pip install -r requirements/segmentation.txt
 For SDA generation and DINO ranking:
 
 ```bash
-conda activate vfmfp
 pip install -r requirements/sda.txt
 ```
 
