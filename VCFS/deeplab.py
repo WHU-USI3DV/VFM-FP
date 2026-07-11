@@ -79,6 +79,7 @@ class DeeplabV3(object):
         #   没有GPU可以设置成False
         #-------------------------------#
         "cuda"              : True,
+        "class_config"      : None,
     }
 
     #---------------------------------------------------#
@@ -89,7 +90,7 @@ class DeeplabV3(object):
         for name, value in kwargs.items():
             setattr(self, name, value)
 
-        class_config = load_class_config(os.environ.get("VCFS_CLASS_CONFIG"))
+        class_config = load_class_config(self.class_config or os.environ.get("VCFS_CLASS_CONFIG"))
         if "num_classes" not in kwargs:
             self.num_classes = int(os.environ.get("VCFS_NUM_CLASSES", class_config["num_classes"]))
         if "model_path" not in kwargs:

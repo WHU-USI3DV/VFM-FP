@@ -1,4 +1,5 @@
-﻿import datetime
+﻿import argparse
+import datetime
 import os
 from functools import partial
 
@@ -45,6 +46,19 @@ from utils.class_config import load_class_config
    婵″倹鐏夐崣顏呮Ц鐠侇厾绮屾禍鍡楀殤娑撶寗tep閺勵垯绗夋导姘箽鐎涙娈戦敍瀛峱och閸滃tep閻ㄥ嫭顩ц箛浣冾洣閹瑰绔诲Δ姘娑撳鈧?
 '''
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train the VCFS facade parser.")
+    parser.add_argument("--class-config", default=None, help="Path to the dataset class JSON.")
+    parser.add_argument("--dataset-path", default=None, help="VOC-style dataset directory.")
+    parser.add_argument("--model-path", default=None, help="Checkpoint path. Use an empty string to skip loading.")
+    parser.add_argument("--input-shape", default=None, help="Input size, for example 512,512 or 512x512.")
+    parser.add_argument("--epochs", type=int, default=None, help="Total training epochs.")
+    parser.add_argument("--batch-size", type=int, default=None, help="Unfreeze-stage batch size.")
+    parser.add_argument("--freeze-batch-size", type=int, default=None, help="Freeze-stage batch size.")
+    parser.add_argument("--save-dir", default=None, help="Training output directory.")
+    parser.add_argument("--num-workers", type=int, default=None, help="DataLoader worker count.")
+    parser.add_argument("--num-classes", type=int, default=None, help="Override class count.")
+    parser.add_argument("--eval-flag", choices=("true", "false"), default=None, help="Enable or disable periodic mIoU evaluation.")
+    cli_args, _ = parser.parse_known_args()
     #---------------------------------#
     #   Cuda    閺勵垰鎯佹担璺ㄦ暏Cuda
     #           濞屸剝婀丟PU閸欘垯浜掔拋鍓х枂閹存€揳lse
@@ -254,8 +268,9 @@ if __name__ == "__main__":
     #   num_classes = 3
     #   cls_weights = np.array([1, 2, 3], np.float32)
     #------------------------------------------------------------------#
-    class_config = load_class_config(os.environ.get("VCFS_CLASS_CONFIG"))
-    num_classes = int(os.environ.get("VCFS_NUM_CLASSES", class_config["num_classes"]))
+    class_config = load_class_config(cli_args.class_config or os.environ.get("VCFS_CLASS_CONFIG"))
+    num_classes_value = cli_args.num_classes if cli_args.num_classes is not None else os.environ.get("VCFS_NUM_CLASSES")
+    num_classes = int(num_classes_value or class_config["num_classes"])
     cls_weights     = np.ones([num_classes], np.float32)
     #------------------------------------------------------------------#
     #   num_workers     閻劋绨拋鍓х枂閺勵垰鎯佹担璺ㄦ暏婢舵氨鍤庣粙瀣嚢閸欐牗鏆熼幑顕嗙礉1娴狅綀銆冮崗鎶芥４婢舵氨鍤庣粙?
@@ -266,18 +281,22 @@ if __name__ == "__main__":
     num_workers         = 4
 
 
-    def _env_int(name, current):
+    def _cli_env_int(cli_value, name, current):
+        if cli_value is not None:
+            return int(cli_value)
         value = os.environ.get(name)
         return current if value in (None, "") else int(value)
 
-    def _env_bool(name, current):
+    def _cli_env_bool(cli_value, name, current):
+        if cli_value is not None:
+            return cli_value.lower() in ("1", "true", "yes", "y", "on")
         value = os.environ.get(name)
         if value in (None, ""):
             return current
         return value.lower() in ("1", "true", "yes", "y", "on")
 
-    def _env_shape(name, current):
-        value = os.environ.get(name)
+    def _cli_env_shape(cli_value, name, current):
+        value = cli_value if cli_value is not None else os.environ.get(name)
         if value in (None, ""):
             return current
         parts = [int(part.strip()) for part in value.replace("x", ",").split(",") if part.strip()]
@@ -285,15 +304,15 @@ if __name__ == "__main__":
             raise ValueError("{} must be like 512,512 or 512x512".format(name))
         return parts
 
-    model_path = os.environ.get("VCFS_MODEL_PATH", model_path)
-    input_shape = _env_shape("VCFS_INPUT_SHAPE", input_shape)
-    UnFreeze_Epoch = _env_int("VCFS_EPOCHS", UnFreeze_Epoch)
-    Freeze_batch_size = _env_int("VCFS_FREEZE_BATCH_SIZE", Freeze_batch_size)
-    Unfreeze_batch_size = _env_int("VCFS_BATCH_SIZE", Unfreeze_batch_size)
-    save_dir = os.environ.get("VCFS_SAVE_DIR", save_dir)
-    eval_flag = _env_bool("VCFS_EVAL_FLAG", eval_flag)
-    VOCdevkit_path = os.environ.get("VCFS_DATASET_PATH", VOCdevkit_path)
-    num_workers = _env_int("VCFS_NUM_WORKERS", num_workers)
+    model_path = cli_args.model_path if cli_args.model_path is not None else os.environ.get("VCFS_MODEL_PATH", model_path)
+    input_shape = _cli_env_shape(cli_args.input_shape, "VCFS_INPUT_SHAPE", input_shape)
+    UnFreeze_Epoch = _cli_env_int(cli_args.epochs, "VCFS_EPOCHS", UnFreeze_Epoch)
+    Freeze_batch_size = _cli_env_int(cli_args.freeze_batch_size, "VCFS_FREEZE_BATCH_SIZE", Freeze_batch_size)
+    Unfreeze_batch_size = _cli_env_int(cli_args.batch_size, "VCFS_BATCH_SIZE", Unfreeze_batch_size)
+    save_dir = cli_args.save_dir if cli_args.save_dir is not None else os.environ.get("VCFS_SAVE_DIR", save_dir)
+    eval_flag = _cli_env_bool(cli_args.eval_flag, "VCFS_EVAL_FLAG", eval_flag)
+    VOCdevkit_path = cli_args.dataset_path if cli_args.dataset_path is not None else os.environ.get("VCFS_DATASET_PATH", VOCdevkit_path)
+    num_workers = _cli_env_int(cli_args.num_workers, "VCFS_NUM_WORKERS", num_workers)
     print("Using class config: {}".format(class_config["path"]))
 
     seed_everything(seed)
@@ -416,8 +435,8 @@ if __name__ == "__main__":
         print("Train split: {}".format(train_split_path))
         print("Val split: {}".format(val_split_path))
 
-    train_limit = _env_int("VCFS_TRAIN_LIMIT", 0)
-    val_limit = _env_int("VCFS_VAL_LIMIT", 0)
+    train_limit = _cli_env_int(None, "VCFS_TRAIN_LIMIT", 0)
+    val_limit = _cli_env_int(None, "VCFS_VAL_LIMIT", 0)
     if train_limit > 0:
         train_lines = train_lines[:train_limit]
     if val_limit > 0:

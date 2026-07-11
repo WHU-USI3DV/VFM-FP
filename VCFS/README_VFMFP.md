@@ -34,21 +34,19 @@ Use a VOC-style directory:
     `-- test.txt
 ```
 
-`train.py` currently reads the dataset selected by `VCFS_DATASET_PATH`; if unset, it uses `facadewhu_extend`. It looks for:
+`train.py` reads the dataset selected by `--dataset-path`; if unset, it uses `facadewhu_extend`. It looks for:
 
 ```text
 <dataset>/txt/train_1601.txt
 <dataset>/txt/val.txt
 ```
 
-If `train_1601.txt` is missing but `train.txt` exists, the split loader falls back to `train.txt`. Use `VCFS_CLASS_CONFIG` to select the matching class metadata before training, prediction, or mIoU evaluation.
+If `train_1601.txt` is missing but `train.txt` exists, the split loader falls back to `train.txt`. Use `--class-config` to select the matching class metadata before training.
 
-Shell example:
+Training example:
 
 ```bash
-export VCFS_CLASS_CONFIG=../configs/classes.ecp.json
-export VCFS_DATASET_PATH=ecp_0619_refine
-python train.py
+python train.py --class-config ../configs/classes.ecp.json --dataset-path ecp_0619_refine
 ```
 
 ## Release Notes
