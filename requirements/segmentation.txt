@@ -1,5 +1,6 @@
-﻿# Core segmentation training/inference dependencies.
-# Install the torch/torchvision build that matches your CUDA version.
+# Core segmentation training/inference dependencies.
+# Tested with torch==2.3.0 and torchvision==0.18.0 on CUDA 11.8.
+# If your CUDA version differs, install the matching PyTorch build first.
 
 torch
 torchvision

@@ -37,13 +37,24 @@ Local datasets, generated images, and experiment outputs are kept outside the re
 
 ## 🔧 Environment
 
-The code was cleaned to keep dependency lists small and readable. Install the PyTorch build that matches your CUDA version.
+Recommended tested environment:
 
-For VCFS segmentation training and inference:
+- Python 3.10
+- PyTorch 2.3.0
+- torchvision 0.18.0
+- CUDA 11.8
+
+Create the environment and install the recommended PyTorch build:
 
 ```bash
 conda create -n vfmfp python=3.10
 conda activate vfmfp
+pip install torch==2.3.0 torchvision==0.18.0 --index-url https://download.pytorch.org/whl/cu118
+```
+
+For VCFS segmentation training and inference:
+
+```bash
 pip install -r requirements/segmentation.txt
 ```
 
@@ -53,6 +64,8 @@ For SDA generation and DINO ranking:
 conda activate vfmfp
 pip install -r requirements/sda.txt
 ```
+
+If your CUDA version is different, install the matching PyTorch and torchvision build first, then install the remaining dependencies from `requirements/`.
 
 Python 3.10 is the recommended public-release baseline. `VCFS` loads DINOv2 through `torch.hub`, and the current upstream DINOv2 hub code uses Python 3.10 syntax. Python 3.8 may still work only if you already have a compatible local Torch Hub cache snapshot.
 
