@@ -30,7 +30,6 @@ Local datasets, generated images, and experiment outputs are kept outside the re
 |   |-- predict.py               # Image/folder/video/FPS/ONNX inference entrypoint
 |   `-- get_miou.py              # mIoU evaluation entrypoint
 |-- configs/                     # Class metadata and path examples
-|-- docs/                        # Data, citation, and licensing notes
 |-- requirements/                # Lightweight dependency lists
 `-- tools/                       # Release generation and audit tools
 ```
@@ -133,7 +132,7 @@ Place the ECP data in the same VOC-style folder structure, then pass that datase
 
 For another dataset, create a matching class config under `configs/` and keep the masks encoded with that class order.
 
-Release packages do not include datasets or generated training outputs. See `docs/data_and_weights.md` for expected paths and redistribution guidance.
+Release packages do not include datasets or generated training outputs.
 
 ## 🔦 SDA: Data-Level Expansion
 
@@ -324,8 +323,6 @@ If you use this code, please cite:
 ## License
 
 This repository does not currently include a root project `LICENSE`. The upstream DeepLabv3+ baseline notice is preserved at `VCFS/LICENSE`.
-
-See `docs/licensing.md` for details.
 
 ## Related Projects
 
