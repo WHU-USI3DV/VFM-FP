@@ -1,5 +1,7 @@
 # VFM-FP
 
+> **Notice:** This project is currently being reorganized and improved. Documentation and code structure may change during this process.
+
 <a href="https://doi.org/10.1016/j.inffus.2026.104593" target="_blank">Leveraging Visual Foundation Model Priors for Facade Parsing from Street View Images</a>
 
 This is the PyTorch implementation about VFM-FP, a street-view facade parsing workflow that leverages prior knowledge of VFMs for data augmentation and feature fusion.
