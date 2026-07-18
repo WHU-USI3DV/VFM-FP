@@ -1,6 +1,5 @@
 # VFM-FP
 
-Official code release for:
 
 **Leveraging Visual Foundation Model Priors for Facade Parsing from Street View Images**
 
@@ -10,14 +9,7 @@ Zhe Chen, Qingwen Tan, Fuxun Liang, Chen Long, Pangyin Li, Zhiming Liu, Junjie C
 
 ## Current Release Scope
 
-This repository currently releases **VCFS**, the VFM-FP semantic segmentation
-network architecture. VCFS keeps the DeepLabv3+ decoder and MobileNetV2 backbone,
-then injects frozen DINOv2 visual foundation model features through trainable
-multi-scale projection and cross-attention fusion blocks.
-
-The SDA data-generation workflow and all generated SDA outputs are not included
-in this public release. Local experiment folders, generated images, checkpoints,
-logs, model caches, and third-party diffusion code are ignored by Git.
+This repository currently releases **VCFS**, the VFM-FP semantic segmentation network architecture.
 
 ## Repository Layout
 
@@ -114,10 +106,3 @@ python evaluate.py \
   --class-config ../configs/classes.facadewhu.json \
   --output results/run_name/eval_best.json
 ```
-
-## Notes
-
-- Do not commit datasets, generated imagery, experiment results, or checkpoints.
-- `VCFS/model_data/deeplab_mobilenetv2.pth` is retained only as the lightweight
-  baseline initialization checkpoint used by the DeepLabv3+ training path.
-- The SDA workflow may be released separately after it is cleaned and validated.
