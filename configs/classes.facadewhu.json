@@ -20,5 +20,6 @@
     [0, 0, 255],
     [0, 255, 0]
   ],
+  "eval_ignore_class_ids": [0],
   "note": "Default class order for FacadeWHU-style VFM-FP training."
 }

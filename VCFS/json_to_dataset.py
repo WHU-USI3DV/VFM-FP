@@ -7,15 +7,12 @@ import numpy as np
 import PIL.Image
 from labelme import utils
 
-'''
-制作自己的语义分割数据集需要注意以下几点：
-1、我使用的labelme版本是3.16.7，建议使用该版本的labelme，有些版本的labelme会发生错误，
-   具体错误为：Too many dimensions: 3 > 2
-   安装方式为命令行pip install labelme==3.16.7
-2、此处生成的标签图是8位彩色图，与视频中看起来的数据集格式不太一样。
-   虽然看起来是彩图，但事实上只有8位，此时每个像素点的值就是这个像素点所属的种类。
-   所以其实和视频中VOC数据集的格式一样。因此这样制作出来的数据集是可以正常使用的。也是正常的。
-'''
+"""Legacy helper for converting labelme JSON annotations to VOC-style masks.
+
+The generated mask is an 8-bit class-id image. It may look like a color image in
+some viewers, but each pixel value is the semantic class id expected by the VOC
+training pipeline.
+"""
 if __name__ == '__main__':
     jpgs_path   = "datasets/JPEGImages"
     pngs_path   = "datasets/SegmentationClass"

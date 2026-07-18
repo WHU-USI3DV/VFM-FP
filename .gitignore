@@ -20,6 +20,10 @@ env/
 # Training outputs and checkpoints
 logs/
 **/logs/
+VCFS/logs*/
+results/
+**/results/
+VCFS/results*/
 model_data/*.pth
 model_data/*.pt
 model_data/*.tar
@@ -30,15 +34,27 @@ model_data/*.tar
 *.bin
 *.safetensors
 !VCFS/model_data/
+VCFS/model_data/*
 !VCFS/model_data/deeplab_mobilenetv2.pth
 
 # Datasets and generated imagery
+/SDA/
+/SDA_code_old/
+/SDA_output*/
+/SDA_smoke/
+/models/
+/third_party/
+/configs/sda*.json
+/configs/*sda*.json
+/configs/z_image_control_2.1.yaml
+/requirements/sda*.txt
 VOCdevkit/
 **/VOCdevkit/
 FacadeWHU_origin/
 facadewhu/
 facadewhu_extend/
 facadewhu_vfm-fp_*/
+VCFS/facadewhu_*/
 ECP/
 ECP_*/
 ecp_*/
@@ -85,4 +101,3 @@ img_out/
 
 # Local release copies
 release/
-

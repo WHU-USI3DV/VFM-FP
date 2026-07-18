@@ -24,5 +24,6 @@
     [135, 206, 235],
     [160, 82, 45]
   ],
+  "eval_ignore_class_ids": [0],
   "note": "Example native ECP class order from the legacy code comments. Confirm ids against your ECP masks before training."
 }

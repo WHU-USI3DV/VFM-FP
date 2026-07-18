@@ -42,7 +42,15 @@ def load_class_config(path=None):
             f"colors_rgb has {len(colors)} colors but num_classes is {num_classes} in {config_path}"
         )
 
+    ignored = [int(class_id) for class_id in config.get("eval_ignore_class_ids", [])]
+    invalid_ignored = [class_id for class_id in ignored if not 0 <= class_id < num_classes]
+    if invalid_ignored:
+        raise ValueError(
+            f"eval_ignore_class_ids contains invalid ids {invalid_ignored} in {config_path}"
+        )
+
     config["num_classes"] = num_classes
     config["classes"] = classes
+    config["eval_ignore_class_ids"] = ignored
     config["path"] = str(config_path)
     return config

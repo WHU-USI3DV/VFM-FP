@@ -7,41 +7,43 @@ from nets.mobilenetv2 import mobilenetv2
 
 # Cross-attention block used by the active VFM-FP fusion model.
 from nets.my_attention import Attention_cross
+from utils.fea_upscale import DINOFeatureProjection
 
-import torchvision.transforms as T
-import cv2
-import numpy as np
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+VCFS_ARCHITECTURE_VERSION = "registered_dino_projection_v1"
+DINOV2_REPO = "facebookresearch/dinov2:b194f00db6136677fc8a4cc2ef2168f7699dfba2"
+DINOV2_MODEL = "dinov2_vits14"
+DINOV2_CHANNELS = 384
+DINOV2_MEAN = (0.485, 0.456, 0.406)
+DINOV2_STD = (0.229, 0.224, 0.225)
 
-transform = T.Compose([
-    T.GaussianBlur(9, sigma=(0.1, 2.0)),
-    T.Resize((36 * 14, 36 * 14)),
-    T.CenterCrop((36 * 14, 36 * 14)),
-    T.ToTensor(),
-    T.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-])
- 
-from utils.fea_upscale import UpScale
+# DINOv2 is a frozen external extractor and is intentionally omitted from
+# VCFS checkpoints. The pinned model is loaded once per process.
+_DINOV2_VITS14 = None
 
-# Lazy-load DINOv2 so importing this module stays lightweight.
-_DINOV2_VITB14 = None
 
-def _get_dinov2_vitb14():
-    global _DINOV2_VITB14
-    if _DINOV2_VITB14 is None:
-        _DINOV2_VITB14 = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14').cuda()
-    return _DINOV2_VITB14
+def _get_dinov2_vits14(device):
+    global _DINOV2_VITS14
+    if _DINOV2_VITS14 is None:
+        _DINOV2_VITS14 = torch.hub.load(
+            DINOV2_REPO,
+            DINOV2_MODEL,
+            skip_validation=True,
+        )
+        _DINOV2_VITS14.requires_grad_(False)
+    _DINOV2_VITS14.to(device)
+    _DINOV2_VITS14.eval()
+    return _DINOV2_VITS14
 
-def CONV(x, in_channels, out_channels):
-    conv2_layer = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, bias=True).cuda()
-    y = conv2_layer(x)
-    return y
 
-# -------------------------------------------------------------------#
-#   MobileNetV2 主干网络 (交叉注意力 + 前置 Alpha 尺度对齐版)
-# -------------------------------------------------------------------#
+def _normalize_for_dinov2(image):
+    mean = image.new_tensor(DINOV2_MEAN).view(1, 3, 1, 1)
+    std = image.new_tensor(DINOV2_STD).view(1, 3, 1, 1)
+    return (image - mean) / std
+
 class MobileNetV2(nn.Module):
+    """MobileNetV2 backbone with multi-scale DINOv2 cross-attention fusion."""
+
     def __init__(self, downsample_factor=8, pretrained=True):
         super(MobileNetV2, self).__init__()
         from functools import partial
@@ -52,26 +54,30 @@ class MobileNetV2(nn.Module):
         self.total_idx  = len(self.features)
         self.down_idx   =[2, 4, 7, 14]
 
-        # ----------------控制开关----------------
         self.Fusion_CrossAttention = True 
         
         self.dino_layers =[2, 5, 8, 11]
-        # self.dinov2_vitb14 = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14').cuda()
 
-        # ----------------核心创新点：独立的可学习尺度对齐参数----------------
-        # 初始化为 0 (ones)
+        # These layers must be persistent: creating Conv/BN inside forward
+        # made the old DINO projection random on every batch.
+        self.dino_projections = nn.ModuleList(
+            DINOFeatureProjection(DINOV2_CHANNELS, channels)
+            for channels in (24, 64, 96, 160)
+        )
+
+        # Per-stage learnable gates. Zero initialization makes the fused branch
+        # start from an identity-like residual path before learning VFM cues.
         self.alpha1 = nn.Parameter(torch.zeros(1))
         self.alpha2 = nn.Parameter(torch.zeros(1))
         self.alpha3 = nn.Parameter(torch.zeros(1))
         self.alpha4 = nn.Parameter(torch.zeros(1))
         
-        # ----------------初始化四个融合层的交叉注意力模块----------------
         self.A1 = Attention_cross(24)
         self.A2 = Attention_cross(64)
         self.A3 = Attention_cross(96)
         self.A4 = Attention_cross(160)
 
-        # ----------------配置空洞卷积----------------
+        # Configure dilated convolutions to match the DeepLab output stride.
         if downsample_factor == 8:
             for i in range(self.down_idx[-2], self.down_idx[-1]):
                 self.features[i].apply(
@@ -103,68 +109,53 @@ class MobileNetV2(nn.Module):
     def forward(self, x):
         _, _, H, W = x.shape
         
-# Lazy-load DINOv2 so importing this module stays lightweight.
         new_H = H // 14 * 14
         new_W = W // 14 * 14
         
         token_hw = (new_H // 14, new_W // 14)
         with torch.no_grad():
             upsampled_tensor = F.interpolate(x, size=(new_H, new_W), mode='bilinear', align_corners=False)
-# Lazy-load DINOv2 so importing this module stays lightweight.
-            dino = _get_dinov2_vitb14().get_intermediate_layers(upsampled_tensor.cuda(), self.dino_layers)
+            dino_input = _normalize_for_dinov2(upsampled_tensor)
+            dino = _get_dinov2_vits14(x.device).get_intermediate_layers(
+                dino_input,
+                self.dino_layers,
+            )
 
-        # ========================================================
-        #   交叉注意力融合 (Cross Attention Fusion) + 前置尺度对齐
-        # ========================================================
         if self.Fusion_CrossAttention:
-            
-            # -------- 第 1 融合层 --------
             x_2 = self.features[:3](x)
-            D0 = UpScale(dino[0], x_2, token_hw=token_hw)
-            
-            # 1. 【前置 Alpha 对齐】：初始为1，保留完整特征分布
+            D0 = self.dino_projections[0](dino[0], x_2, token_hw=token_hw)
             D0_aligned = D0 * self.alpha1 
-            # 2. 【交叉注意力融合】：因为 D0_aligned 含有正常信息，注意力矩阵一切正常
             x_2 = self.A1(x_2, D0_aligned)  
             
-            low_level_features = self.features[3:4](x_2) # 提取给 Decoder 使用的浅层特征
+            low_level_features = self.features[3:4](x_2)
             
-            # -------- 第 2 融合层 --------
             x_7 = self.features[4:8](low_level_features)
-            D1 = UpScale(dino[1], x_7, token_hw=token_hw)
-            
+            D1 = self.dino_projections[1](dino[1], x_7, token_hw=token_hw)
             D1_aligned = D1 * self.alpha2
             x_7 = self.A2(x_7, D1_aligned)  
             
-            # -------- 第 3 融合层 --------
             x_11 = self.features[8:12](x_7)
-            D2 = UpScale(dino[2], x_11, token_hw=token_hw)
-            
+            D2 = self.dino_projections[2](dino[2], x_11, token_hw=token_hw)
             D2_aligned = D2 * self.alpha3
             x_11 = self.A3(x_11, D2_aligned)  
             
-            # -------- 第 4 融合层 --------
             x_14 = self.features[12:15](x_11)
-            D3 = UpScale(dino[3], x_14, token_hw=token_hw)
-            
+            D3 = self.dino_projections[3](dino[3], x_14, token_hw=token_hw)
             D3_aligned = D3 * self.alpha4
             x_14 = self.A4(x_14, D3_aligned)  
             
-            # 将最终的高层特征输出给 ASPP 模块
             x = self.features[15:](x_14)
 
         else:
-            # 安全备份逻辑 
             low_level_features = self.features[:4](x)
             x = self.features[4:](low_level_features)
 
         return low_level_features, x 
 
 
-#-----------------------------------------#
-#   ASPP特征提取模块
-#-----------------------------------------#
 class ASPP(nn.Module):
+    """Atrous Spatial Pyramid Pooling used by DeepLabv3+."""
+
     def __init__(self, dim_in, dim_out, rate=1, bn_mom=0.1):
         super(ASPP, self).__init__()
         self.branch1 = nn.Sequential(
@@ -215,10 +206,9 @@ class ASPP(nn.Module):
         result = self.conv_cat(feature_cat)
         return result
 
-#-----------------------------------------#
-#   DeepLabV3+ 主模型
-#-----------------------------------------#
 class DeepLab(nn.Module):
+    """DeepLabv3+ segmentation head wrapped around the selected backbone."""
+
     def __init__(self, num_classes, backbone="mobilenet", pretrained=True, downsample_factor=16):
         super(DeepLab, self).__init__()
         
@@ -227,7 +217,6 @@ class DeepLab(nn.Module):
             in_channels = 2048
             low_level_channels = 256
         elif backbone == "mobilenet":
-            # MobileNetV2 内部已硬编码为 前置Alpha(初始化为1) 的交叉注意力融合
             self.backbone = MobileNetV2(downsample_factor=downsample_factor, pretrained=pretrained)
             in_channels = 320
             low_level_channels = 24
@@ -269,8 +258,6 @@ class DeepLab(nn.Module):
         x = F.interpolate(x, size=(H, W), mode='bilinear', align_corners=True)
         
         return x
-
-
 
 
 

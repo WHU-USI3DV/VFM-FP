@@ -1,4 +1,4 @@
-# ignore map, miou, datasets
+# Local experiment outputs and datasets.
 map_out/
 miou_out/
 VOCdevkit/
@@ -6,10 +6,21 @@ datasets/
 Medical_Datasets/
 lfw/
 logs/
+logs*/
+results/
+results*/
+facadewhu*/
+FacadeWHU*/
+paper_out*/
+img_out/
 model_data/
 !model_data/
 !model_data/deeplab_mobilenetv2.pth
 .temp_miou_out/
+*.pth
+!model_data/deeplab_mobilenetv2.pth
+*.onnx
+*.tfevents.*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -26,7 +26,6 @@ def InverFreq_loss(inputs, target, freq_list, num_classes, gamma=0, alpha=None):
         inputs = F.interpolate(inputs, size=(ht, wt), mode="bilinear", align_corners=True)
 
     temp_inputs = inputs.transpose(1, 2).transpose(2, 3).contiguous().view(-1, c)
-    #transpose=(1,2):pytorch中的transpose函数转换第一维度和第二维度 ; 变换之后temp_input的维度是（8*512*512，12）——（2097152，12）
     temp_target = target.view(-1)
 
     weight=freq_list
@@ -69,9 +68,6 @@ def Dice_loss(inputs, target, beta=1, smooth = 1e-5):
     temp_inputs = torch.softmax(inputs.transpose(1, 2).transpose(2, 3).contiguous().view(n, -1, c),-1)
     temp_target = target.view(n, -1, ct)
 
-    #--------------------------------------------#
-    #   计算dice loss
-    #--------------------------------------------#
     tp = torch.sum(temp_target[...,:-1] * temp_inputs, axis=[0,1])
     fp = torch.sum(temp_inputs                       , axis=[0,1]) - tp
     fn = torch.sum(temp_target[...,:-1]              , axis=[0,1]) - tp

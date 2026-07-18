@@ -1,212 +1,209 @@
-﻿import os
+import os
+import sys
+import shutil
+import json
+from pathlib import Path
 
 import matplotlib
+import numpy as np
+import scipy.signal
 import torch
 import torch.nn.functional as F
-
-matplotlib.use('Agg')
-from matplotlib import pyplot as plt
-import scipy.signal
-
-import cv2
-import shutil
-import numpy as np
-
 from PIL import Image
-from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
-from .utils import cvtColor, preprocess_input, resize_image, resize_img
-from .utils_metrics import compute_mIoU
+from tqdm import tqdm
+
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt
+
+from .utils import cvtColor, preprocess_input, resize_img
+from .utils_metrics import compute_mIoU, mean_metric
 
 
-class LossHistory():
+TRUE_VALUES = {"1", "true", "yes", "on"}
+
+
+class LossHistory:
     def __init__(self, log_dir, model, input_shape):
-        self.log_dir    = log_dir
-        self.losses     = []
-        self.val_loss   = []
-        
-        os.makedirs(self.log_dir)
-        self.writer     = SummaryWriter(self.log_dir)
-        if os.environ.get("VCFS_ADD_TENSORBOARD_GRAPH", "0").lower() in ("1", "true", "yes", "on"):
-            try:
-                dummy_input = torch.randn(2, 3, input_shape[0], input_shape[1])
-                self.writer.add_graph(model, dummy_input)
-            except Exception as exc:
-                print("TensorBoard graph export skipped: {}".format(exc))
+        self.log_dir = Path(log_dir)
+        self.losses = []
+        self.val_loss = []
+
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        self.writer = SummaryWriter(str(self.log_dir))
+        if os.environ.get("VCFS_ADD_TENSORBOARD_GRAPH", "0").lower() in TRUE_VALUES:
+            self._try_add_graph(model, input_shape)
+
+    def _try_add_graph(self, model, input_shape):
+        try:
+            dummy_input = torch.randn(2, 3, input_shape[0], input_shape[1])
+            self.writer.add_graph(model, dummy_input)
+        except Exception as exc:
+            print(f"TensorBoard graph export skipped: {exc}")
 
     def append_loss(self, epoch, loss, val_loss):
-        if not os.path.exists(self.log_dir):
-            os.makedirs(self.log_dir)
-
+        self.log_dir.mkdir(parents=True, exist_ok=True)
         self.losses.append(loss)
         self.val_loss.append(val_loss)
 
-        with open(os.path.join(self.log_dir, "epoch_loss.txt"), 'a') as f:
-            f.write(str(loss))
-            f.write("\n")
-        with open(os.path.join(self.log_dir, "epoch_val_loss.txt"), 'a') as f:
-            f.write(str(val_loss))
-            f.write("\n")
-
-        self.writer.add_scalar('loss', loss, epoch)
-        self.writer.add_scalar('val_loss', val_loss, epoch)
+        self._append_scalar_file("epoch_loss.txt", loss)
+        self._append_scalar_file("epoch_val_loss.txt", val_loss)
+        self.writer.add_scalar("loss", loss, epoch)
+        self.writer.add_scalar("val_loss", val_loss, epoch)
         self.loss_plot()
 
-    def loss_plot(self):
-        iters = range(len(self.losses))
+    def _append_scalar_file(self, filename, value):
+        with (self.log_dir / filename).open("a", encoding="utf-8") as file:
+            file.write(f"{value}\n")
 
+    def loss_plot(self):
+        epochs = range(len(self.losses))
         plt.figure()
-        plt.plot(iters, self.losses, 'red', linewidth = 2, label='train loss')
-        plt.plot(iters, self.val_loss, 'coral', linewidth = 2, label='val loss')
+        plt.plot(epochs, self.losses, "red", linewidth=2, label="train loss")
+        plt.plot(epochs, self.val_loss, "coral", linewidth=2, label="val loss")
+
+        smooth_window = 5 if len(self.losses) < 25 else 15
         try:
-            if len(self.losses) < 25:
-                num = 5
-            else:
-                num = 15
-            
-            plt.plot(iters, scipy.signal.savgol_filter(self.losses, num, 3), 'green', linestyle = '--', linewidth = 2, label='smooth train loss')
-            plt.plot(iters, scipy.signal.savgol_filter(self.val_loss, num, 3), '#8B4513', linestyle = '--', linewidth = 2, label='smooth val loss')
-        except:
+            plt.plot(
+                epochs,
+                scipy.signal.savgol_filter(self.losses, smooth_window, 3),
+                "green",
+                linestyle="--",
+                linewidth=2,
+                label="smooth train loss",
+            )
+            plt.plot(
+                epochs,
+                scipy.signal.savgol_filter(self.val_loss, smooth_window, 3),
+                "#8B4513",
+                linestyle="--",
+                linewidth=2,
+                label="smooth val loss",
+            )
+        except Exception:
             pass
 
         plt.grid(True)
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
         plt.legend(loc="upper right")
-
-        plt.savefig(os.path.join(self.log_dir, "epoch_loss.png"))
-
-        plt.cla()
+        plt.savefig(self.log_dir / "epoch_loss.png")
         plt.close("all")
 
-class EvalCallback():
-    def __init__(self, net, input_shape, num_classes, image_ids, dataset_path, log_dir, cuda, \
-            miou_out_path=".temp_miou_out", eval_flag=True, period=1):
-        super(EvalCallback, self).__init__()
-        
-        self.net                = net
-        self.input_shape        = input_shape
-        self.num_classes        = num_classes
-        self.image_ids          = image_ids
-        self.dataset_path       = dataset_path
-        self.log_dir            = log_dir
-        self.cuda               = cuda
-        self.miou_out_path      = miou_out_path
-        self.eval_flag          = eval_flag
-        self.period             = period
-        
-        self.image_ids          = [image_id.split()[0] for image_id in image_ids]
-        self.mious      = [0]
-        self.epoches    = [0]
+
+class EvalCallback:
+    def __init__(
+        self,
+        net,
+        input_shape,
+        num_classes,
+        image_ids,
+        dataset_path,
+        log_dir,
+        cuda,
+        miou_out_path=None,
+        eval_flag=True,
+        period=1,
+        ignore_class_ids=None,
+    ):
+        self.net = net
+        self.input_shape = input_shape
+        self.num_classes = num_classes
+        self.image_ids = [image_id.split()[0] for image_id in image_ids]
+        self.dataset_path = Path(dataset_path)
+        self.log_dir = Path(log_dir)
+        self.cuda = cuda
+        self.miou_out_path = Path(miou_out_path) if miou_out_path else self.log_dir / "miou_tmp"
+        self.eval_flag = eval_flag
+        self.period = period
+        self.ignore_class_ids = list(ignore_class_ids or [])
+        self.mious = [0]
+        self.epoches = [0]
+
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        (self.log_dir / "evaluation_config.json").write_text(
+            json.dumps(
+                {
+                    "metric": "mean_iou",
+                    "num_classes": self.num_classes,
+                    "ignore_class_ids": self.ignore_class_ids,
+                    "includes_background": 0 not in self.ignore_class_ids,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
         if self.eval_flag:
-            with open(os.path.join(self.log_dir, "epoch_miou.txt"), 'a') as f:
-                f.write(str(0))
-                f.write("\n")
+            self._append_miou(0)
+
+    def _append_miou(self, value):
+        with (self.log_dir / "epoch_miou.txt").open("a", encoding="utf-8") as file:
+            file.write(f"{value}\n")
 
     def get_miou_png(self, image, label):
-        #---------------------------------------------------------#
-        #   鍦ㄨ繖閲屽皢鍥惧儚杞崲鎴怰GB鍥惧儚锛岄槻姝㈢伆搴﹀浘鍦ㄩ娴嬫椂鎶ラ敊銆?
-        #   浠ｇ爜浠呬粎鏀寔RGB鍥惧儚鐨勯娴嬶紝鎵€鏈夊叾瀹冪被鍨嬬殑鍥惧儚閮戒細杞寲鎴怰GB
-        #---------------------------------------------------------#
-        image       = cvtColor(image)
-        # orininal_h  = np.array(image).shape[0]
-        # orininal_w  = np.array(image).shape[1]
-        #---------------------------------------------------------#
-        #   缁欏浘鍍忓鍔犵伆鏉★紝瀹炵幇涓嶅け鐪熺殑resize
-        #   涔熷彲浠ョ洿鎺esize杩涜璇嗗埆
-        #---------------------------------------------------------#
-        # image_data, nw, nh  = resize_image(image, (self.input_shape[1],self.input_shape[0]))
-        image_data, label  = resize_img(image, (self.input_shape[1],self.input_shape[0]), label)
-        #---------------------------------------------------------#
-        #   娣诲姞涓奲atch_size缁村害
-        #---------------------------------------------------------#
-        image_data  = np.expand_dims(np.transpose(preprocess_input(np.array(image_data, np.float32)), (2, 0, 1)), 0)
+        image = cvtColor(image)
+        image_data, label = resize_img(image, (self.input_shape[1], self.input_shape[0]), label)
+        image_data = np.expand_dims(
+            np.transpose(preprocess_input(np.array(image_data, np.float32)), (2, 0, 1)),
+            0,
+        )
 
         with torch.no_grad():
             images = torch.from_numpy(image_data)
             if self.cuda:
                 images = images.cuda()
-                
-            #---------------------------------------------------#
-            #   鍥剧墖浼犲叆缃戠粶杩涜棰勬祴
-            #---------------------------------------------------#
-            pr = self.net(images)[0]
-            #---------------------------------------------------#
-            #   鍙栧嚭姣忎竴涓儚绱犵偣鐨勭绫?
-            #---------------------------------------------------#
-            pr = F.softmax(pr.permute(1,2,0),dim = -1).cpu().numpy()
-            #--------------------------------------#
-            #   灏嗙伆鏉￠儴鍒嗘埅鍙栨帀
-            #--------------------------------------#
-            # pr = pr[int((self.input_shape[0] - nh) // 2) : int((self.input_shape[0] - nh) // 2 + nh), \
-            #         int((self.input_shape[1] - nw) // 2) : int((self.input_shape[1] - nw) // 2 + nw)]
-            # #---------------------------------------------------#
-            # #   杩涜鍥剧墖鐨剅esize
-            # #---------------------------------------------------#
-            # pr = cv2.resize(pr, (orininal_w, orininal_h), interpolation = cv2.INTER_LINEAR)
-            #---------------------------------------------------#
-            #   鍙栧嚭姣忎竴涓儚绱犵偣鐨勭绫?
-            #---------------------------------------------------#
-            pr = pr.argmax(axis=-1)
-    
-        image = Image.fromarray(np.uint8(pr))
-        return image,label
-    
+
+            logits = self.net(images)[0]
+            probs = F.softmax(logits.permute(1, 2, 0), dim=-1).cpu().numpy()
+            pred = probs.argmax(axis=-1)
+
+        return Image.fromarray(np.uint8(pred)), label
+
     def on_epoch_end(self, epoch, model_eval):
-        if epoch % self.period == 0 and self.eval_flag:
-            self.net    = model_eval
-            # gt_dir      = os.path.join(self.dataset_path, "SegmentationClass/")
-            pred_dir    = os.path.join(self.miou_out_path, 'detection-results')
-            gt_crop_dir     = os.path.join(self.miou_out_path, 'Ground_True_Crop')
+        if not self.eval_flag or epoch % self.period != 0:
+            return
 
-            if not os.path.exists(pred_dir):
-                os.makedirs(pred_dir)
-                
-            if not os.path.exists(gt_crop_dir):
-                os.makedirs(gt_crop_dir)
+        self.net = model_eval
+        pred_dir = self.miou_out_path / "detection-results"
+        gt_crop_dir = self.miou_out_path / "Ground_True_Crop"
+        pred_dir.mkdir(parents=True, exist_ok=True)
+        gt_crop_dir.mkdir(parents=True, exist_ok=True)
 
-            print("Get miou.")
-            for image_id in tqdm(self.image_ids):
-                #-------------------------------#
-                #   浠庢枃浠朵腑璇诲彇鍥惧儚
-                #-------------------------------#
-                image_path  = os.path.join(self.dataset_path, "JPEGImages/"+image_id+".jpg")
-                image       = Image.open(image_path)
+        print("Get miou.")
+        for image_id in tqdm(self.image_ids, disable=not sys.stderr.isatty()):
+            image = Image.open(self.dataset_path / "JPEGImages" / f"{image_id}.jpg")
+            gt = Image.open(self.dataset_path / "SegmentationClass" / f"{image_id}.png")
+            pred, gt = self.get_miou_png(image, gt)
+            pred.save(pred_dir / f"{image_id}.png")
+            gt.save(gt_crop_dir / f"{image_id}.png")
 
-                gt_path = os.path.join(self.dataset_path, "SegmentationClass/"+image_id+".png")
-                gt = Image.open(gt_path)
-                #------------------------------#
-                #   鑾峰緱棰勬祴txt
-                #------------------------------#
-                image,gt       = self.get_miou_png(image,gt)
-                image.save(os.path.join(pred_dir, image_id + ".png"))
-                gt.save(os.path.join(gt_crop_dir, image_id + ".png"))
-                        
-            print("Calculate miou.")
-            #_, IoUs, _, _ = compute_mIoU(gt_dir, pred_dir, self.image_ids, self.num_classes, None)  # 鎵ц璁＄畻mIoU鐨勫嚱鏁?
-            _, IoUs, _, _ = compute_mIoU(gt_crop_dir, pred_dir, self.image_ids, self.num_classes, None)  # 鎵ц璁＄畻mIoU鐨勫嚱鏁?
- 
-            temp_miou = np.nanmean(IoUs) * 100
+        print("Calculate miou.")
+        _, ious, _, _ = compute_mIoU(
+            str(gt_crop_dir),
+            str(pred_dir),
+            self.image_ids,
+            self.num_classes,
+            None,
+            ignore_class_ids=self.ignore_class_ids,
+        )
+        miou = mean_metric(ious, self.ignore_class_ids) * 100
+        self.mious.append(miou)
+        self.epoches.append(epoch)
+        self._append_miou(miou)
+        self._plot_miou()
 
-            self.mious.append(temp_miou)
-            self.epoches.append(epoch)
+        print("Get miou done.")
+        shutil.rmtree(self.miou_out_path, ignore_errors=True)
 
-            with open(os.path.join(self.log_dir, "epoch_miou.txt"), 'a') as f:
-                f.write(str(temp_miou))
-                f.write("\n")
-            
-            plt.figure()
-            plt.plot(self.epoches, self.mious, 'red', linewidth = 2, label='train miou')
-
-            plt.grid(True)
-            plt.xlabel('Epoch')
-            plt.ylabel('Miou')
-            plt.title('A Miou Curve')
-            plt.legend(loc="upper right")
-
-            plt.savefig(os.path.join(self.log_dir, "epoch_miou.png"))
-            plt.cla()
-            plt.close("all")
-
-            print("Get miou done.")
-            shutil.rmtree(self.miou_out_path)
+    def _plot_miou(self):
+        plt.figure()
+        plt.plot(self.epoches, self.mious, "red", linewidth=2, label="train miou")
+        plt.grid(True)
+        plt.xlabel("Epoch")
+        plt.ylabel("Miou")
+        plt.title("A Miou Curve")
+        plt.legend(loc="upper right")
+        plt.savefig(self.log_dir / "epoch_miou.png")
+        plt.close("all")
